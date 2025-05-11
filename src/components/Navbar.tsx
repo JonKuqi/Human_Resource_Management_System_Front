@@ -48,6 +48,12 @@ const Navbar = () => {
             >
               Sign Up
             </Link>
+            <Link
+              to="/tenant/register"
+              className="px-4 py-2 rounded-md bg-[#AAB7B8] text-[#1C2833] hover:bg-[#BDC3C7] transition-all"
+            >
+              Register Company
+            </Link>
           </div>
         </div>
 
@@ -91,6 +97,13 @@ const Navbar = () => {
                 onClick={toggleMenu}
               >
                 Sign Up
+              </Link>
+              <Link
+                to="/tenant/register"
+                className="w-full text-center px-4 py-3 rounded-md bg-[#AAB7B8] text-[#1C2833] hover:bg-[#BDC3C7] transition-all"
+                onClick={toggleMenu}
+              >
+                Register Company
               </Link>
             </div>
           </div>
