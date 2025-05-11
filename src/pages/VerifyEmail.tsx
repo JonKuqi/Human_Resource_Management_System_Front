@@ -45,7 +45,7 @@ const VerifyEmailPage = () => {
   const handleVerify = async () => {
     try {
       const response = await axios.post(
-        "http://localhost:8081/api/v1/public/user-general/verify",
+        `${process.env.PRODUCTION}/api/v1/public/user-general/verify`,
         { email, code },
         {
           headers: {
@@ -64,7 +64,7 @@ const VerifyEmailPage = () => {
   const handleResend = async () => {
     try {
       await axios.post(
-        "http://localhost:8081/api/v1/public/user-general/resend",
+        `${process.env.PRODUCTION}/api/v1/public/user-general/resend`,
         { email },
         {
           headers: {
@@ -115,7 +115,7 @@ const VerifyEmailPage = () => {
         <div className="text-center mt-4">
           <p className="text-sm text-gray-600">Time left: {formatTime(timeLeft)}</p>
           <button
-            //disabled={resendDisabled}
+            disabled={resendDisabled}
             onClick={handleResend}
             className={`mt-2 text-sm font-medium text-blue-600 hover:underline disabled:text-gray-400 disabled:cursor-not-allowed`}
           >

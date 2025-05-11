@@ -151,7 +151,7 @@ const HomePage = () => {
                 </li>
               </ul>
               <div className="mt-8">
-                <Link to="/tenant/signup">
+                <Link to="/tenant/register">
                   <Button variant="primary">Register Your Company</Button>
                 </Link>
               </div>
@@ -179,7 +179,7 @@ const HomePage = () => {
                 Sign Up as Job Seeker
               </Button>
             </Link>
-            <Link to="/tenant/signup">
+            <Link to="/tenant/register">
               <Button variant="outline" className="border-white text-white hover:bg-white hover:text-[#2E4053]">
                 Register Your Company
               </Button>

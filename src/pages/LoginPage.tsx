@@ -8,6 +8,14 @@ import Button from "../components/Button"
 import { FaLock } from "react-icons/fa"
 import { useTheme } from "../context/ThemeContext"
 import axios from "axios"
+import { jwtDecode } from "jwt-decode"
+import { useEffect } from "react"
+
+interface DecodedToken {
+  role: string;
+}
+
+
 
 const LoginSchema = Yup.object().shape({
   email: Yup.string().email("Invalid email address").required("Email is required"),
@@ -18,9 +26,13 @@ const LoginPage = () => {
   const { colors } = useTheme()
   const navigate = useNavigate()
 
+  useEffect(() => {
+    localStorage.removeItem("token")
+  }, [])
+
   const handleSubmit = async (values: any, { setSubmitting }: any) => {
     try {
-      const response = await axios.post("http://localhost:8081/api/v1/public/user/authenticate", {
+      const response = await axios.post(`http://localhost:8081/api/v1/public/user/authenticate`, {
         email: values.email,
         password: values.password,
       })
@@ -28,7 +40,15 @@ const LoginPage = () => {
       const token = response.data.token
       localStorage.setItem("token", token)
 
-      navigate("/dashboard")
+      const decoded = jwtDecode<DecodedToken>(token)
+      console.log("Decoded Role:", decoded.role)
+
+      if (decoded.role === "TENANT_USER") {
+        navigate("/tenant/dashboard")
+      } else {
+        navigate("/")
+      }
+
     } catch (error: any) {
       console.error("Login failed:", error)
       const message = error.response?.data?.error || ""
