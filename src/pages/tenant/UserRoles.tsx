@@ -64,6 +64,10 @@ const UserRoles = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [users, setUsers] = useState<UserTenantView[]>([]);
   const [permissions, setPermissions] = useState<TenantPermission[]>([]);
+  const permissionIds: number[] = [];
+  const targetRoleIds: number[] = [];
+
+  
 
   // ---------- UI ----------
   const [searchTerm, setSearchTerm] = useState("");
@@ -71,6 +75,7 @@ const UserRoles = () => {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [selectedUserRoles, setSelectedUserRoles] = useState<string[]>([]);
+  const [permTargets, setPermTargets] = useState<Record<number, Set<number>>>({});
 
   // ---------- status ----------
   const [loading, setLoading] = useState(false);
@@ -130,15 +135,34 @@ const UserRoles = () => {
     );
   });
 
-  const togglePermission = (id: string) =>
+  const togglePermission = (id: string, permId: number) => {
     setSelectedPermissions((prev) =>
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
     );
+    // initialise mapping to 0 (ALL) the first time we see this permission
+    setPermTargets((prev) => ({ ...prev, [permId]: prev[permId] ?? 0 }));
+  };
 
   const toggleUserRole = (roleName: string) =>
     setSelectedUserRoles((prev) =>
       prev.includes(roleName) ? prev.filter((r) => r !== roleName) : [...prev, roleName]
     );
+
+
+
+    const toggleTarget = (permId: number, roleId: number) => {
+      setPermTargets((prev) => {
+        const current = new Set(prev[permId] ?? new Set<number>([0])); // default ALL
+        if (current.has(roleId)) {
+          current.delete(roleId);
+        } else {
+          current.delete(0);          // selecting a specific role removes “ALL”
+          current.add(roleId);
+        }
+        if (current.size === 0) current.add(0); // nothing selected → back to ALL
+        return { ...prev, [permId]: current };
+      });
+    };
 
   /* ---------------- actions ----------------*/
   const openPermissionsPanel = async (roleId: number) => {
@@ -185,32 +209,39 @@ const openRolesDropdown = async (userTenantId: number) => {
 
 
 const savePermissions = async () => {
-  
   if (selectedRoleId === null) return;
 
-  // translate selectedPermissions ("VERB:res") → ids
-  const permissionIds = selectedPermissions
-    .map((id) => {
-      const [verb, resource] = id.split(":");
-      return permissions.find(
-        (p) => p.verb === verb && p.resource === resource
-      )?.tenantPermissionId;
-    })
-    .filter(Boolean) as number[];
+  // ---------- build arrays (multi-target) ----------
+  const permissionIds: number[] = [];
+  const targetRoleIds: number[] = [];
 
-    try {
-      await API.put(`/tenant/role-permission/replace/${selectedRoleId}`, {
-        permissionIds,
-        targetRoleId: null
-      });
-    
-      toast.success("Permissions saved ✔️");   // <-- success toast
-      setSelectedRoleId(null);
-    } catch (e) {
-      console.error(e);
-      setError("Failed to save permissions.");
-      toast.error("Failed to save permissions ❌");   // optional
-    }
+  selectedPermissions.forEach((id) => {
+    const [verb, resource] = id.split(":");
+    const perm = permissions.find(
+      (p) => p.verb === verb && p.resource === resource
+    );
+    if (!perm) return;
+
+    const targets =
+      permTargets[perm.tenantPermissionId] ?? new Set<number>([0]); // 0 = ALL
+    targets.forEach((t) => {
+      permissionIds.push(perm.tenantPermissionId);
+      targetRoleIds.push(t);
+    });
+  });
+  // ---------- end build arrays ----------
+
+  try {
+    await API.put(`/tenant/role-permission/replace/${selectedRoleId}`, {
+      permissionIds,
+      targetRoleIds,
+    });
+    toast.success("Permissions saved ✔️");
+    setSelectedRoleId(null);
+  } catch (e) {
+    console.error(e);
+    toast.error("Failed to save permissions ❌");
+  }
 };
 
 
@@ -269,6 +300,11 @@ const deleteRole = async (roleId: number) => {
     toast.error("Failed to delete role ❌");
   }
 };
+
+
+
+
+
 
 
 
@@ -376,12 +412,12 @@ const deleteRole = async (roleId: number) => {
                   const id = `${perm.verb}:${perm.resource}`;
                   return (
                     <div key={id} className="flex items-start">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 text-[#2E4053]"
-                        checked={selectedPermissions.includes(id)}
-                        onChange={() => togglePermission(id)}
-                      />
+                     <input
+                      type="checkbox"
+                      className="h-4 w-4 text-[#2E4053]"
+                      checked={selectedPermissions.includes(id)}
+                      onChange={() => togglePermission(id, perm.tenantPermissionId)}   //  ← changed
+                    />
                       <div className="ml-3 text-sm">
                         <label className="font-medium text-gray-700">
                           {perm.name ||
@@ -391,6 +427,35 @@ const deleteRole = async (roleId: number) => {
                           <p className="text-gray-500">{perm.description}</p>
                         )}
                       </div>
+
+                      <div className="ml-auto flex space-x-2">
+  {/* ALL checkbox */}
+  <label className="flex items-center text-xs">
+    <input
+      type="checkbox"
+      className="mr-1"
+      checked={(permTargets[perm.tenantPermissionId] ?? new Set([0])).has(0)}
+      onChange={() => toggleTarget(perm.tenantPermissionId, 0)}
+    />
+    ALL
+  </label>
+
+  {roles.map((r) => (
+    <label key={r.roleId} className="flex items-center text-xs">
+      <input
+        type="checkbox"
+        className="mr-1"
+        checked={(permTargets[perm.tenantPermissionId] ?? new Set([0])).has(
+          r.roleId
+        )}
+        onChange={() => toggleTarget(perm.tenantPermissionId, r.roleId)}
+      />
+      {r.roleName}
+    </label>
+  ))}
+</div>
+
+
                     </div>
                   );
                 })}
