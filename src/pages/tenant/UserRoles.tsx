@@ -139,8 +139,12 @@ const UserRoles = () => {
     setSelectedPermissions((prev) =>
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
     );
-    // initialise mapping to 0 (ALL) the first time we see this permission
-    setPermTargets((prev) => ({ ...prev, [permId]: prev[permId] ?? 0 }));
+  
+    // ✅ fix: use Set not number
+    setPermTargets((prev) => ({
+      ...prev,
+      [permId]: prev[permId] ?? new Set<number>([0]),  // <== FIXED HERE
+    }));
   };
 
   const toggleUserRole = (roleName: string) =>
