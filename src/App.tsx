@@ -20,6 +20,22 @@ import { ToastContainer } from "react-toastify";          // ➊
 import "react-toastify/dist/ReactToastify.css";  
 
 
+// HR pages
+import DashboardPage from "./pages/tenant/HR/DashboardPage";
+import JobsPage from "./pages/tenant/HR/JobsPage";
+import JobApplicantsPage from "./pages/tenant/HR/JobApplicantsPage";
+import NewJobPage from "./pages/tenant/HR/NewJobPage";
+import EmployeesPage from "./pages/tenant/HR/EmployeesPage";
+import NewEmployeePage from "./pages/tenant/HR/NewEmployeePage";
+import ContratsPage from "./pages/tenant/HR/ContratsPage";
+import NewContratPage from "./pages/tenant/HR/NewContratPage";
+import LeaveRequestPage from "./pages/tenant/HR/LeaveRequestPage";
+import NewLeaveRequestPage from "./pages/tenant/HR/NewLeaveRequestPage";
+import PerformancePage from "./pages/tenant/HR/PerformancePage";
+import NewPerformanceEvaluationPage from "./pages/tenant/HR/NewPerformanceEvaluationPage";
+
+
+
 function App() {
   const PublicLayout = ({ children }: { children: React.ReactNode }) => (
     <div className="flex flex-col min-h-screen">
@@ -104,6 +120,23 @@ function App() {
             </PrivateRoute>
           }
         />
+
+        
+          {/* HR Pages */}
+          <Route path="/tenant/hr/dashboard" element={<PrivateRoute><TenantLayout><DashboardPage /></TenantLayout></PrivateRoute>} />
+          <Route path="/tenant/hr/jobs" element={<PrivateRoute><TenantLayout><JobsPage /></TenantLayout></PrivateRoute>} />
+          <Route path="/tenant/hr/jobs/new" element={<PrivateRoute><TenantLayout><NewJobPage /></TenantLayout></PrivateRoute>} />
+          <Route path="/tenant/hr/job-applicants/:id" element={<PrivateRoute><TenantLayout><JobApplicantsPage params={{
+            id: ""
+          }} /></TenantLayout></PrivateRoute>} />
+          <Route path="/tenant/hr/employees" element={<PrivateRoute><TenantLayout><EmployeesPage /></TenantLayout></PrivateRoute>} />
+          <Route path="/tenant/hr/employees/new" element={<PrivateRoute><TenantLayout><NewEmployeePage /></TenantLayout></PrivateRoute>} />
+          <Route path="/tenant/hr/contracts" element={<PrivateRoute><TenantLayout><ContratsPage /></TenantLayout></PrivateRoute>} />
+          <Route path="/tenant/hr/contracts/new" element={<PrivateRoute><TenantLayout><NewContratPage /></TenantLayout></PrivateRoute>} />
+          <Route path="/tenant/hr/leave-requests" element={<PrivateRoute><TenantLayout><LeaveRequestPage /></TenantLayout></PrivateRoute>} />
+          <Route path="/tenant/hr/leave-requests/new" element={<PrivateRoute><TenantLayout><NewLeaveRequestPage /></TenantLayout></PrivateRoute>} />
+          <Route path="/tenant/hr/performance" element={<PrivateRoute><TenantLayout><PerformancePage /></TenantLayout></PrivateRoute>} />
+          <Route path="/tenant/hr/performance/new" element={<PrivateRoute><TenantLayout><NewPerformanceEvaluationPage /></TenantLayout></PrivateRoute>} />
         </Routes>
       </Router>
     </ThemeProvider>
