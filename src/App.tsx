@@ -1,4 +1,4 @@
-"use client";
+"use client"; 
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
@@ -12,12 +12,13 @@ import Footer from "./components/Footer";
 import TenantLayout from "./layouts/TenantLayout";
 import { ThemeProvider } from "./context/ThemeContext";
 import "./styles/globals.css";
-import PrivateRoute from "./components/PrivateRoute";
+import PrivateRoute from "./components/PrivateRoute"; 
 import Profile from "./pages/tenant/Profile";
 import CompanyRegistrationPage from "./pages/CompanyRegistrationPage";
 import OwnerOnboardingPage from "./pages/OwnerOnboardingPage";
-import { ToastContainer } from "react-toastify";          // ➊
+import { ToastContainer } from "react-toastify";          
 import "react-toastify/dist/ReactToastify.css";  
+import SubscriptionPage from "./pages/tenant/subscription"; 
 
 
 // HR pages
@@ -34,8 +35,6 @@ import NewLeaveRequestPage from "./pages/tenant/HR/NewLeaveRequestPage";
 import PerformancePage from "./pages/tenant/HR/PerformancePage";
 import NewPerformanceEvaluationPage from "./pages/tenant/HR/NewPerformanceEvaluationPage";
 
-
-
 function App() {
   const PublicLayout = ({ children }: { children: React.ReactNode }) => (
     <div className="flex flex-col min-h-screen">
@@ -46,7 +45,6 @@ function App() {
   );
 
   return (
-    
     <ThemeProvider>
       <ToastContainer position="bottom-right" autoClose={3000} />
       <Router>
@@ -60,11 +58,11 @@ function App() {
             path="/tenant/register"
             element={
               <PublicLayout>
-              <div className="flex flex-col min-h-screen">
-                <main className="flex-grow">
-                  <CompanyRegistrationPage />
-                </main>
-              </div>
+                <div className="flex flex-col min-h-screen">
+                  <main className="flex-grow">
+                    <CompanyRegistrationPage />
+                  </main>
+                </div>
               </PublicLayout>
             }
           />
@@ -72,11 +70,11 @@ function App() {
             path="/tenant/onboarding"
             element={
               <PublicLayout>
-              <div className="flex flex-col min-h-screen">
-                <main className="flex-grow">
-                  <OwnerOnboardingPage />
-                </main>
-              </div>
+                <div className="flex flex-col min-h-screen">
+                  <main className="flex-grow">
+                    <OwnerOnboardingPage />
+                  </main>
+                </div>
               </PublicLayout>
             }
           />
@@ -92,43 +90,49 @@ function App() {
               </div>
             </TenantLayout>
           } />
-            <Route
-          path="/tenant/dashboard"
-         element={
-          <PrivateRoute>
-             <TenantLayout>
-              <Dashboard />
-           </TenantLayout>
-            </PrivateRoute>
-           }
+          <Route
+            path="/tenant/dashboard"
+            element={
+              <PrivateRoute>
+                <TenantLayout>
+                  <Dashboard />
+                </TenantLayout>
+              </PrivateRoute>
+            }
           />
           <Route path="/tenant/user-roles" element={
             <PrivateRoute>
-            <TenantLayout>
-              <UserRoles />
-            </TenantLayout>
+              <TenantLayout>
+                <UserRoles />
+              </TenantLayout>
             </PrivateRoute>
           } />
+          <Route
+            path="/tenant/profile"
+            element={
+              <PrivateRoute>
+                <TenantLayout>
+                  <Profile />
+                </TenantLayout>
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/tenant/subscription"
+            element={
+              <PrivateRoute>
+                <TenantLayout>
+                  <SubscriptionPage />
+                </TenantLayout>
+              </PrivateRoute>
+            }
+          />
 
-        <Route
-          path="/tenant/profile"
-          element={
-            <PrivateRoute>
-            <TenantLayout>
-              <Profile />
-            </TenantLayout>
-            </PrivateRoute>
-          }
-        />
-
-        
           {/* HR Pages */}
           <Route path="/tenant/hr/dashboard" element={<PrivateRoute><TenantLayout><DashboardPage /></TenantLayout></PrivateRoute>} />
           <Route path="/tenant/hr/jobs" element={<PrivateRoute><TenantLayout><JobsPage /></TenantLayout></PrivateRoute>} />
           <Route path="/tenant/hr/jobs/new" element={<PrivateRoute><TenantLayout><NewJobPage /></TenantLayout></PrivateRoute>} />
-          <Route path="/tenant/hr/job-applicants/:id" element={<PrivateRoute><TenantLayout><JobApplicantsPage params={{
-            id: ""
-          }} /></TenantLayout></PrivateRoute>} />
+          <Route path="/tenant/hr/job-applicants/:id" element={<PrivateRoute><TenantLayout><JobApplicantsPage params={{id: ""}} /></TenantLayout></PrivateRoute>} />
           <Route path="/tenant/hr/employees" element={<PrivateRoute><TenantLayout><EmployeesPage /></TenantLayout></PrivateRoute>} />
           <Route path="/tenant/hr/employees/new" element={<PrivateRoute><TenantLayout><NewEmployeePage /></TenantLayout></PrivateRoute>} />
           <Route path="/tenant/hr/contracts" element={<PrivateRoute><TenantLayout><ContratsPage /></TenantLayout></PrivateRoute>} />
