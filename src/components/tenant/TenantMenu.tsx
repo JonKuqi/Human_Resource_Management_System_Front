@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Link, useLocation } from "react-router-dom" // Zëvendësimi i `next/link` dhe `usePathname` me `Link` dhe `useLocation` nga `react-router-dom`
+import { Link, useLocation } from "react-router-dom" 
 import { useTheme } from "../../context/ThemeContext"
 import UserProfile from "./UserProfile"
 import { FaTachometerAlt, FaUsersCog, FaFileAlt, FaCalendarAlt, FaChartLine, FaCreditCard } from "react-icons/fa"
@@ -17,7 +17,7 @@ const menuPages = [
 ]
 
 const TenantMenu = () => {
-  const location = useLocation() // Përdorim `useLocation` nga `react-router-dom` për të marrë path current
+  const location = useLocation() 
   const { colors } = useTheme()
   const [activeItem, setActiveItem] = useState("")
 
@@ -26,7 +26,7 @@ const TenantMenu = () => {
     if (active) {
       setActiveItem(active.id)
     }
-  }, [location]) // Përdorim `location` nga `useLocation` për të bërë gjurmimin e rrugës
+  }, [location]) 
 
   return (
     <div className="flex flex-col h-full">
@@ -41,7 +41,7 @@ const TenantMenu = () => {
           {menuPages.map((page) => (
             <Link
               key={page.id}
-              to={page.path} // Përdorim `to` në vend të `href` për `react-router-dom`
+              to={page.path} 
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors ${
                 activeItem === page.id
                   ? `bg-[${colors.accent}] text-[${colors.secondary}]`

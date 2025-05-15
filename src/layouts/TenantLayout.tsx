@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation"; // This will still be valid for Next.js routing
+import { usePathname } from "next/navigation"; 
 import { useTheme } from "../context/ThemeContext";
 import TenantMenu from "../components/tenant/TenantMenu";
 import { FaBars } from "react-icons/fa";

@@ -1,4 +1,4 @@
-"use client"; // Sigurohuni që kjo është shtuar në fillim të file-it
+"use client"; 
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
@@ -12,11 +12,11 @@ import Footer from "./components/Footer";
 import TenantLayout from "./layouts/TenantLayout";
 import { ThemeProvider } from "./context/ThemeContext";
 import "./styles/globals.css";
-import PrivateRoute from "./components/PrivateRoute";  // Sigurohuni që ky komponent ekziston dhe funksionon siç duhet
+import PrivateRoute from "./components/PrivateRoute"; 
 import Profile from "./pages/tenant/Profile";
 import CompanyRegistrationPage from "./pages/CompanyRegistrationPage";
 import OwnerOnboardingPage from "./pages/OwnerOnboardingPage";
-import { ToastContainer } from "react-toastify";          // ➊
+import { ToastContainer } from "react-toastify";          
 import "react-toastify/dist/ReactToastify.css";  
 import SubscriptionPage from "./pages/tenant/subscription"; 
 

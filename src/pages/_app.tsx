@@ -8,11 +8,11 @@ function MyApp({ Component, pageProps }: any) {
   const [isClient, setIsClient] = useState(false);
   
   useEffect(() => {
-    setIsClient(true); // Set client flag after initial render
+    setIsClient(true); 
   }, []);
 
   if (!isClient) {
-    return null; // Prevent rendering on server-side
+    return null; 
   }
 
   return (
