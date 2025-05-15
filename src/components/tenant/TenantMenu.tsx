@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Link, useLocation } from "react-router-dom"
+import { useEffect, useState } from "react"
+import { Link, useLocation } from "react-router-dom" // Zëvendësimi i `next/link` dhe `usePathname` me `Link` dhe `useLocation` nga `react-router-dom`
 import { useTheme } from "../../context/ThemeContext"
 import UserProfile from "./UserProfile"
-import { FaTachometerAlt, FaUsersCog, FaFileAlt, FaCalendarAlt, FaChartLine } from "react-icons/fa"
+import { FaTachometerAlt, FaUsersCog, FaFileAlt, FaCalendarAlt, FaChartLine, FaCreditCard } from "react-icons/fa"
 
 // This would typically come from an API or context
 const menuPages = [
@@ -13,20 +13,20 @@ const menuPages = [
   { id: "applications", name: "Applications", path: "/tenant/applications", icon: <FaFileAlt /> },
   { id: "leave-requests", name: "Leave Requests", path: "/tenant/leave-requests", icon: <FaCalendarAlt /> },
   { id: "performance", name: "Performance", path: "/tenant/performance", icon: <FaChartLine /> },
+  { id: "subscription", name: "Subscription", path: "/tenant/subscription", icon: <FaCreditCard /> },
 ]
 
 const TenantMenu = () => {
-  const location = useLocation()
+  const location = useLocation() // Përdorim `useLocation` nga `react-router-dom` për të marrë path current
   const { colors } = useTheme()
   const [activeItem, setActiveItem] = useState("")
 
   useEffect(() => {
-    const currentPath = location.pathname
-    const active = menuPages.find((page) => currentPath.includes(page.id))
+    const active = menuPages.find((page) => location.pathname.includes(page.id))
     if (active) {
       setActiveItem(active.id)
     }
-  }, [location])
+  }, [location]) // Përdorim `location` nga `useLocation` për të bërë gjurmimin e rrugës
 
   return (
     <div className="flex flex-col h-full">
@@ -41,7 +41,7 @@ const TenantMenu = () => {
           {menuPages.map((page) => (
             <Link
               key={page.id}
-              to={page.path}
+              to={page.path} // Përdorim `to` në vend të `href` për `react-router-dom`
               className={`flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors ${
                 activeItem === page.id
                   ? `bg-[${colors.accent}] text-[${colors.secondary}]`

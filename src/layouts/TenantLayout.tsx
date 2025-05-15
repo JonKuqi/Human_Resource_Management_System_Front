@@ -1,26 +1,21 @@
-"use client"
+"use client";
 
-import type React from "react"
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation"; // This will still be valid for Next.js routing
+import { useTheme } from "../context/ThemeContext";
+import TenantMenu from "../components/tenant/TenantMenu";
+import { FaBars } from "react-icons/fa";
 
-import { useState, useEffect } from "react"
-import { useLocation } from "react-router-dom"
-import TenantMenu from "../components/tenant/TenantMenu"
-import { FaBars } from "react-icons/fa"
-import { useTheme } from "../context/ThemeContext"
+// TenantLayout component for layout
+const TenantLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const pathname = usePathname(); // Use useLocation in react-router-dom
+  const { colors } = useTheme();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-interface TenantLayoutProps {
-  children: React.ReactNode
-}
-
-const TenantLayout: React.FC<TenantLayoutProps> = ({ children }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const location = useLocation()
-  const { colors } = useTheme()
-
-  // Close mobile menu when route changes
   useEffect(() => {
-    setIsMobileMenuOpen(false)
-  }, [location])
+    // Close the mobile menu when the pathname changes (user navigates)
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   return (
     <div className="flex h-screen bg-[#F4F6F6]">
@@ -56,7 +51,7 @@ const TenantLayout: React.FC<TenantLayoutProps> = ({ children }) => {
         <div className="max-w-7xl mx-auto">{children}</div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default TenantLayout
+export default TenantLayout;
