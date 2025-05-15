@@ -19,6 +19,11 @@ import OwnerOnboardingPage from "./pages/OwnerOnboardingPage";
 import { ToastContainer } from "react-toastify";          
 import "react-toastify/dist/ReactToastify.css";  
 import SubscriptionPage from "./pages/tenant/subscription"; 
+import UserLayout from "./layouts/UserLayout"
+import SkillsPage from "./pages/user/skills/SkillsPage"
+import ProfilePage from "./pages/user/profile/profilePage"
+import JoblistPage from "./pages/user/Joblist/JoblistPage"
+import UserHomePage from "./pages/user/UserHomePage";
 
 
 // HR pages
