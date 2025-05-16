@@ -45,8 +45,10 @@ const LoginPage = () => {
 
       if (decoded.role === "TENANT_USER") {
         navigate("/tenant/dashboard")
+      } else if (decoded.role === "GENERAL_USER") {
+        navigate("/user");
       } else {
-        navigate("/")
+        navigate("/"); 
       }
 
     } catch (error: any) {

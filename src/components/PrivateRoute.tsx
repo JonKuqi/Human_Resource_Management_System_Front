@@ -17,10 +17,10 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   try {
     const decoded = jwtDecode<JwtPayload>(token)
 
-    if (decoded.role !== "TENANT_USER") {
+    if (!["TENANT_USER", "GENERAL_USER"].includes(decoded.role || "")) {
       return <Navigate to="/login" replace />
     }
-
+    
     return <>{children}</>
   } catch (error) {
     console.error("Invalid token:", error)

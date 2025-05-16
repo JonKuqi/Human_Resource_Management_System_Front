@@ -19,6 +19,11 @@ import OwnerOnboardingPage from "./pages/OwnerOnboardingPage";
 import { ToastContainer } from "react-toastify";          
 import "react-toastify/dist/ReactToastify.css";  
 import SubscriptionPage from "./pages/tenant/subscription"; 
+import UserLayout from "./layouts/UserLayout"
+import SkillsPage from "./pages/user/skills/SkillsPage"
+import ProfilePage from "./pages/user/profile/profilePage"
+import JoblistPage from "./pages/user/Joblist/JoblistPage"
+import UserHomePage from "./pages/user/UserHomePage";
 
 
 // HR pages
@@ -66,7 +71,9 @@ function App() {
               </PublicLayout>
             }
           />
-          <Route
+         
+       
+         <Route
             path="/tenant/onboarding"
             element={
               <PublicLayout>
@@ -78,6 +85,54 @@ function App() {
               </PublicLayout>
             }
           />
+
+<Route
+  path="/user/profile"
+  element={
+    <PrivateRoute>
+      <UserLayout>
+        <ProfilePage />
+      </UserLayout>
+    </PrivateRoute>
+  }
+/>
+
+<Route
+  path="/user/skills"
+  element={
+    <PrivateRoute>
+      <UserLayout>
+        <SkillsPage />
+      </UserLayout>
+    </PrivateRoute>
+  }
+/>
+
+
+<Route
+  path="/user/joblist"
+  element={
+    <PrivateRoute>
+      <UserLayout>
+        <JoblistPage />
+      </UserLayout>
+    </PrivateRoute>
+  }
+/>
+
+<Route
+  path="/user"
+  element={
+    <PrivateRoute>
+      <UserLayout>
+        <UserHomePage />
+      </UserLayout>
+    </PrivateRoute>
+  }
+/>
+
+
+
 
           {/* Tenant routes with sidebar layout */}
           <Route path="/tenant" element={
