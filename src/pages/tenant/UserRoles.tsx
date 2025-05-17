@@ -3,6 +3,8 @@
 // Dynamic User-Role-Permission management page (React + TypeScript)
 // Now injects Bearer token on every API request.
 
+import { EmployeeForm } from "@/src/components/tenant/HR/EmployeeForm";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 
 import { useRouter } from "next/navigation";
@@ -73,6 +75,18 @@ const UserRoles = () => {
   const permissionIds: number[] = [];
   const targetRoleIds: number[] = [];
 
+
+  const refreshUsers = async () => {
+  try {
+    const res = await API.get<UserTenantView[]>("/tenant/user-tenant");
+    setUsers(res.data);
+  } catch (e) {
+    console.error(e);
+    toast.error("Failed to refresh user list");
+  }
+};
+
+
   
 
   // ---------- UI ----------
@@ -87,6 +101,8 @@ const UserRoles = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+
   const [newRoleName, setNewRoleName] = useState("");
  const [newRoleDesc, setNewRoleDesc] = useState("");
 
@@ -199,21 +215,18 @@ const UserRoles = () => {
 const openRolesDropdown = async (userTenantId: number) => {
   setSelectedUserId(userTenantId);
   setSelectedRoleId(null);
-  try {
-    // GET /api/v1/tenant/user-role/by-user-tenant/{userTenantId}
-    const res = await API.get<AssignedRole[]>(
-      `/tenant/user-role/by-user-tenant/${userTenantId}`
-    );
-
-    // each item has r.role.roleName or r.roleName depending on your DTO
-    setSelectedUserRoles(
-      res.data.map((r: any) => r.role?.roleName ?? r.roleName)
-    );
-
-  } catch (e) {
+try {
+  const res = await API.get<AssignedRole[]>(`/tenant/user-role/by-user-tenant/${userTenantId}`);
+  setSelectedUserRoles(res.data.map((r: any) => r.role?.roleName ?? r.roleName));
+} catch (e: any) {
+  if (e.response?.status === 404) {
+    setSelectedUserRoles([]); // nuk ka role – por nuk është error
+  } else {
     console.error(e);
     setError("Unable to fetch user roles.");
   }
+}
+
 }
 
 
@@ -310,14 +323,6 @@ const deleteRole = async (roleId: number) => {
     toast.error("Failed to delete role ❌");
   }
 };
-
-
-
-
-
-
-
-
 
 
   /* ---------------- render ----------------*/
@@ -486,6 +491,30 @@ const deleteRole = async (roleId: number) => {
         <div className="p-4 border-b border-gray-200 bg-[#F4F6F6]">
           <h2 className="text-lg font-semibold text-[#2E4053]">Users</h2>
           <p className="text-sm text-gray-600">Manage user roles</p>
+          <Dialog open={showEmployeeModal} onOpenChange={setShowEmployeeModal} >
+  <DialogTrigger asChild>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <h1 className="text-2xl font-bold text-[#1C2833] mb-4 sm:mb-0">
+          User Roles &amp; Permissions
+        </h1>
+        <Button variant="primary" onClick={() => setShowAddModal(true)}>
+        <FaPlus className="mr-2" /> Add New Employee
+      </Button>
+      </div>
+  </DialogTrigger>
+<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+  <DialogHeader>
+    <DialogTitle>Add New Employee</DialogTitle>
+  </DialogHeader>
+  <EmployeeForm
+    onSuccess={async () => {
+      await refreshUsers();
+      setShowEmployeeModal(false);
+    }}
+  />
+</DialogContent>
+
+</Dialog>
         </div>
 
         {/* search */}
@@ -538,12 +567,17 @@ const deleteRole = async (roleId: number) => {
                 {(u.roles ?? []).map((r) => r.roleName).join(", ") || "-"}
                       </td> */}
                   <td className="px-6 py-4 relative">
-                    <button
-                      className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
-                      onClick={() => openRolesDropdown(u.userTenantId)}
-                    >
-                      Change Roles
-                    </button>
+          <div className="flex flex-col space-y-1 sm:flex-row sm:space-x-2 sm:space-y-0">
+  <button
+    className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+    onClick={() => openRolesDropdown(u.userTenantId)}
+  >
+    Change Roles
+  </button>
+
+
+</div>
+
 
                     {selectedUserId === u.userTenantId && (
                       <div className="absolute z-10 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
