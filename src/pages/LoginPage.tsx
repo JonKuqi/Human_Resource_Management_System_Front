@@ -10,9 +10,11 @@ import { useTheme } from "../context/ThemeContext"
 import axios from "axios"
 import { jwtDecode } from "jwt-decode"
 import { useEffect } from "react"
+import { decode } from "punycode"
 
 interface DecodedToken {
   role: string;
+  user_tenant_id: number;
 }
 
 
@@ -42,13 +44,31 @@ const LoginPage = () => {
 
       const decoded = jwtDecode<DecodedToken>(token)
       console.log("Decoded Role:", decoded.role)
+      const userTenantId = decoded.user_tenant_id
 
       if (decoded.role === "TENANT_USER") {
-        navigate("/tenant/dashboard")
-      } else if (decoded.role === "GENERAL_USER") {
-        navigate("/user");
+        const userRolesResponse = await axios.get(
+          `http://localhost:8081/api/v1/tenant/user-role/by-user-tenant/${userTenantId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        )
+  
+        const roles = userRolesResponse.data
+        const roleName = roles[0]?.role?.roleName?.toLowerCase() || ""
+  
+        if (roleName === "owner") {
+          navigate("/tenant/dashboard")
+        } else if (roleName === "hr") {
+          navigate("/tenant/hr/dashboard")
+        } else {
+          navigate("/") // or fallback to /tenant
+        }
+  
+      } else if (decoded.role=== "GENERAL_USER") {
+        navigate("/user")
       } else {
-        navigate("/"); 
+        navigate("/")
       }
 
     } catch (error: any) {

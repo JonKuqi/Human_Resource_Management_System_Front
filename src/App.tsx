@@ -27,6 +27,8 @@ import UserHomePage from "./pages/user/UserHomePage";
 
 
 // HR pages
+
+import HRLayout from "./layouts/HRLayout";
 import DashboardPage from "./pages/tenant/HR/DashboardPage";
 import JobsPage from "./pages/tenant/HR/JobsPage";
 import JobApplicantsPage from "./pages/tenant/HR/JobApplicantsPage";
@@ -183,20 +185,24 @@ function App() {
             }
           />
 
-          {/* HR Pages */}
-          <Route path="/tenant/hr/dashboard" element={<PrivateRoute><TenantLayout><DashboardPage /></TenantLayout></PrivateRoute>} />
-          <Route path="/tenant/hr/jobs" element={<PrivateRoute><TenantLayout><JobsPage /></TenantLayout></PrivateRoute>} />
-          <Route path="/tenant/hr/jobs/new" element={<PrivateRoute><TenantLayout><NewJobPage /></TenantLayout></PrivateRoute>} />
-          <Route path="/tenant/hr/job-applicants/:id" element={<PrivateRoute><TenantLayout><JobApplicantsPage params={{id: ""}} /></TenantLayout></PrivateRoute>} />
-          <Route path="/tenant/hr/employees" element={<PrivateRoute><TenantLayout><EmployeesPage /></TenantLayout></PrivateRoute>} />
-          <Route path="/tenant/hr/employees/new" element={<PrivateRoute><TenantLayout><NewEmployeePage /></TenantLayout></PrivateRoute>} />
-          <Route path="/tenant/hr/contracts" element={<PrivateRoute><TenantLayout><ContratsPage /></TenantLayout></PrivateRoute>} />
-          <Route path="/tenant/hr/contracts/new" element={<PrivateRoute><TenantLayout><NewContratPage /></TenantLayout></PrivateRoute>} />
-          <Route path="/tenant/hr/leave-requests" element={<PrivateRoute><TenantLayout><LeaveRequestPage /></TenantLayout></PrivateRoute>} />
-          <Route path="/tenant/hr/leave-requests/new" element={<PrivateRoute><TenantLayout><NewLeaveRequestPage /></TenantLayout></PrivateRoute>} />
-          <Route path="/tenant/hr/performance" element={<PrivateRoute><TenantLayout><PerformancePage /></TenantLayout></PrivateRoute>} />
-          <Route path="/tenant/hr/performance/new" element={<PrivateRoute><TenantLayout><NewPerformanceEvaluationPage /></TenantLayout></PrivateRoute>} />
-        </Routes>
+
+
+
+{/* HR Pages */}
+<Route path="/tenant/hr/dashboard" element={<PrivateRoute><HRLayout><DashboardPage /></HRLayout></PrivateRoute>} />
+<Route path="/tenant/hr/jobs" element={<PrivateRoute><HRLayout><JobsPage /></HRLayout></PrivateRoute>} />
+<Route path="/tenant/hr/jobs/new" element={<PrivateRoute><HRLayout><NewJobPage /></HRLayout></PrivateRoute>} />
+<Route path="/tenant/hr/job-applicants/:id" element={<PrivateRoute><HRLayout><JobApplicantsPage params={{id: ""}} /></HRLayout></PrivateRoute>} />
+<Route path="/tenant/hr/employees" element={<PrivateRoute><HRLayout><EmployeesPage /></HRLayout></PrivateRoute>} />
+<Route path="/tenant/hr/employees/new" element={<PrivateRoute><HRLayout><NewEmployeePage /></HRLayout></PrivateRoute>} />
+<Route path="/tenant/hr/contracts" element={<PrivateRoute><HRLayout><ContratsPage /></HRLayout></PrivateRoute>} />
+<Route path="/tenant/hr/contracts/new" element={<PrivateRoute><HRLayout><NewContratPage /></HRLayout></PrivateRoute>} />
+<Route path="/tenant/hr/leave-requests" element={<PrivateRoute><HRLayout><LeaveRequestPage /></HRLayout></PrivateRoute>} />
+<Route path="/tenant/hr/leave-requests/new" element={<PrivateRoute><HRLayout><NewLeaveRequestPage /></HRLayout></PrivateRoute>} />
+<Route path="/tenant/hr/performance" element={<PrivateRoute><HRLayout><PerformancePage /></HRLayout></PrivateRoute>} />
+<Route path="/tenant/hr/performance/new" element={<PrivateRoute><HRLayout><NewPerformanceEvaluationPage /></HRLayout></PrivateRoute>} />
+
+          </Routes>
       </Router>
     </ThemeProvider>
   );

@@ -1,7 +1,7 @@
 "use client"
 
 import { Briefcase, Calendar, Home, LogOut, Settings, Users, Star, FileCheck } from "lucide-react"
-import Link from "next/link"
+import { Link } from "react-router-dom";
 import { usePathname } from "next/navigation"
 
 import {
@@ -45,48 +45,48 @@ const isActive = (path: string) => {
       <SidebarContent>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/dashboard")}>
-              <Link href="/dashboard">
+            <SidebarMenuButton asChild isActive={isActive("/tenant/hr/dashboard")}>
+              <Link to="/tenant/hr/dashboard">
                 <Home className="h-5 w-5" />
                 <span>Dashboard</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/dashboard/jobs")}>
-              <Link href="/dashboard/jobs">
+            <SidebarMenuButton asChild isActive={isActive("/tenant/hr/jobs")}>
+              <Link to="/tenant/hr/jobs">
                 <Briefcase className="h-5 w-5" />
                 <span>Job Listings</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/dashboard/employees")}>
-              <Link href="/dashboard/employees">
+            <SidebarMenuButton asChild isActive={isActive("/tenant/hr/employees")}>
+              <Link to="/tenant/hr/employees">
                 <Users className="h-5 w-5" />
                 <span>Employees</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/dashboard/performance")}>
-              <Link href="/dashboard/performance">
+            <SidebarMenuButton asChild isActive={isActive("/tenant/hr/performance")}>
+              <Link to="/tenant/hr/performance">
                 <Star className="h-5 w-5" />
                 <span>Performance</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/dashboard/leave")}>
-              <Link href="/dashboard/leave">
+            <SidebarMenuButton asChild isActive={isActive("/tenant/hr/leave-requests")}>
+              <Link to="/tenant/hr/leave-requests">
                 <Calendar className="h-5 w-5" />
                 <span>Leave Requests</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild isActive={isActive("/dashboard/contracts")}>
-              <Link href="/dashboard/contracts">
+            <SidebarMenuButton asChild isActive={isActive("/tenant/hr/contracts")}>
+              <Link to="/tenant/hr/contracts">
                 <FileCheck className="h-5 w-5" />
                 <span>Contracts</span>
               </Link>
