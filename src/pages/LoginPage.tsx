@@ -32,62 +32,66 @@ const LoginPage = () => {
     localStorage.removeItem("token")
   }, [])
 
-  const handleSubmit = async (values: any, { setSubmitting }: any) => {
-    try {
-      const response = await axios.post(`http://localhost:8081/api/v1/public/user/authenticate`, {
-        email: values.email,
-        password: values.password,
-      })
+ const handleSubmit = async (values: any, { setSubmitting }: any) => {
+  try {
+    const response = await axios.post(`http://localhost:8081/api/v1/public/user/authenticate`, {
+      email: values.email,
+      password: values.password,
+    })
 
-      const token = response.data.token
-      localStorage.setItem("token", token)
+    const token = response.data.token
+    localStorage.setItem("token", token)
 
-      const decoded = jwtDecode<DecodedToken>(token)
-      console.log("Decoded Role:", decoded.role)
-      const userTenantId = decoded.user_tenant_id
+    const decoded = jwtDecode<DecodedToken>(token)
+    console.log("Decoded Role:", decoded.role)
 
-      if (decoded.role === "TENANT_USER") {
-        const userRolesResponse = await axios.get(
-          `http://localhost:8081/api/v1/tenant/user-role/by-user-tenant/${userTenantId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        )
-  
-        const roles = userRolesResponse.data
-        const roleName = roles[0]?.role?.roleName?.toLowerCase() || ""
-  
-        if (roleName === "owner") {
-          navigate("/tenant/dashboard")
-        } else if (roleName === "hr") {
-          navigate("/tenant/hr/dashboard")
-        } else {
-          navigate("/") // or fallback to /tenant
+    const { role, user_tenant_id: userTenantId } = decoded
+
+    if (role === "TENANT_USER") {
+      const userRolesResponse = await axios.get(
+        `http://localhost:8081/api/v1/tenant/user-role/by-user-tenant/${userTenantId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
         }
-  
-      } else if (decoded.role=== "GENERAL_USER") {
-        navigate("/user")
+      )
+
+      const roles = userRolesResponse.data
+      const roleName = roles[0]?.role?.roleName?.toLowerCase() || ""
+
+      if (roleName === "owner") {
+        navigate("/tenant/dashboard")
+      } else if (roleName === "hr") {
+        navigate("/tenant/hr/dashboard")
       } else {
-        navigate("/")
+        navigate("/tenant")
       }
 
-    } catch (error: any) {
-      console.error("Login failed:", error)
-      const message = error.response?.data?.error || ""
-  
-      if (message.includes("Email not verified")) {
-        // Store email for autofill in verification page
-        localStorage.setItem("pendingEmail", values.email)
-        navigate("/verify-email")
-      } else if (message) {
-        alert(message)
-      } else {
-        alert("Invalid email or password.")
-      }
-    } finally {
-      setSubmitting(false)
+    } else if (role === "GENERAL_USER") {
+      navigate("/user")
+    } else {
+      navigate("/")
     }
+
+  } catch (error: any) {
+    console.error("Login failed:", error)
+
+    const message = error.response?.data?.error || ""
+    console.log("Error message:", message)
+
+    if (message.toLowerCase().includes("email not verified")) {
+      // Save email for prefill on verification page
+      localStorage.setItem("pendingEmail", values.email)
+      navigate("/verify-email")
+    } else if (message) {
+      alert(message)
+    } else {
+      alert("Invalid email or password.")
+    }
+
+  } finally {
+    setSubmitting(false)
   }
+}
 
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 flex flex-col justify-center">
