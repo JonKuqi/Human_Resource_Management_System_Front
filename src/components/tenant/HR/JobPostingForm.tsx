@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useState } from "react"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -18,47 +19,111 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"
 
 const formSchema = z.object({
-  jobTitle: z.string().min(2, {
-    message: "Job title must be at least 2 characters.",
-  }),
-  department: z.string({
-    required_error: "Please select a department.",
-  }),
-  location: z.string().min(2, {
-    message: "Location must be at least 2 characters.",
-  }),
-  employmentType: z.string({
-    required_error: "Please select an employment type.",
-  }),
+  jobTitle: z.string().min(2, { message: "Job title must be at least 2 characters." }),
+  department: z.string({ required_error: "Please select a department." }),
+  location: z.string().min(2, { message: "Location must be at least 2 characters." }),
+  employmentType: z.string({ required_error: "Please select an employment type." }),
   salaryFrom: z.string().optional(),
   salaryTo: z.string().optional(),
-  description: z.string().min(10, {
-    message: "Description must be at least 10 characters.",
-  }),
-  aboutUs: z.string().min(10, {
-    message: "About us must be at least 10 characters.",
-  }),
-  validUntil: z.date({
-    required_error: "Please select a valid until date.",
-  }),
+  description: z.string().min(10, { message: "Description must be at least 10 characters." }),
+  aboutUs: z.string().min(10, { message: "About us must be at least 10 characters." }),
+  validUntil: z.date({ required_error: "Please select a valid until date." }),
+  tags: z.array(z.string()).optional(),
 })
+
+function TagsInput({ value, onChange }: { value: string[]; onChange: (tags: string[]) => void }) {
+  const [input, setInput] = useState("")
+
+  const handleAddTag = () => {
+    const newTag = input.trim()
+    if (newTag && !value.includes(newTag)) {
+      onChange([...value, newTag])
+    }
+    setInput("")
+  }
+
+  const handleRemoveTag = (tag: string) => {
+    onChange(value.filter((t) => t !== tag))
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Enter tag and press Add" />
+        <Button type="button" onClick={handleAddTag}>Add</Button>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {value.map((tag) => (
+          <div key={tag} className="flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm">
+            {tag}
+            <button type="button" className="ml-2 text-red-500" onClick={() => handleRemoveTag(tag)}>×</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export function JobPostingForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       jobTitle: "",
+      department: "",
       location: "",
+      employmentType: "",
+      salaryFrom: "",
+      salaryTo: "",
       description: "",
       aboutUs: "",
-      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      tags: [],
     },
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
-    // Here you would typically send the data to your API
-    alert("Job posting created successfully!")
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const token = localStorage.getItem("token")
+
+      const jobRes = await fetch("http://localhost:8081/api/v1/public/job-listing", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          jobTitle: values.jobTitle,
+          department: values.department,
+          location: values.location,
+          employmentType: values.employmentType,
+          salaryFrom: values.salaryFrom,
+          salaryTo: values.salaryTo,
+          description: values.description,
+          aboutUs: values.aboutUs,
+          validUntil: values.validUntil,
+        }),
+      })
+
+      if (!jobRes.ok) throw new Error("Failed to create job listing")
+      const createdJob = await jobRes.json()
+      const jobId = createdJob.jobListingId
+
+      for (const tag of values.tags || []) {
+        await fetch("http://localhost:8081/api/v1/public/job-tag", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ jobListingId: jobId, tag }),
+        })
+      }
+
+      alert("Job listing and tags created successfully!")
+    } catch (error) {
+      console.error(error)
+      alert("An error occurred while creating the job or tags.")
+    }
   }
 
   return (
@@ -71,178 +136,113 @@ export function JobPostingForm() {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="jobTitle"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Job Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Senior Software Engineer" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="department"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Department</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormField control={form.control} name="jobTitle" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Job Title</FormLabel>
+                  <FormControl><Input placeholder="e.g. Senior Software Engineer" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="department" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Department</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select a department" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="engineering">Engineering</SelectItem>
+                      <SelectItem value="design">Design</SelectItem>
+                      <SelectItem value="product">Product</SelectItem>
+                      <SelectItem value="marketing">Marketing</SelectItem>
+                      <SelectItem value="sales">Sales</SelectItem>
+                      <SelectItem value="support">Support</SelectItem>
+                      <SelectItem value="hr">Human Resources</SelectItem>
+                      <SelectItem value="finance">Finance</SelectItem>
+                      <SelectItem value="operations">Operations</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="location" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Location</FormLabel>
+                  <FormControl><Input placeholder="e.g. Remote, New York, NY" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="employmentType" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Employment Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select employment type" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      <SelectItem value="full-time">Full-time</SelectItem>
+                      <SelectItem value="part-time">Part-time</SelectItem>
+                      <SelectItem value="contract">Contract</SelectItem>
+                      <SelectItem value="internship">Internship</SelectItem>
+                      <SelectItem value="temporary">Temporary</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="salaryFrom" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Salary From</FormLabel>
+                  <FormControl><Input type="number" placeholder="e.g. 50000" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="salaryTo" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Salary To</FormLabel>
+                  <FormControl><Input type="number" placeholder="e.g. 70000" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="validUntil" render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Valid Until</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a department" />
-                        </SelectTrigger>
+                        <Button variant="outline" className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}>
+                          {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="engineering">Engineering</SelectItem>
-                        <SelectItem value="design">Design</SelectItem>
-                        <SelectItem value="product">Product</SelectItem>
-                        <SelectItem value="marketing">Marketing</SelectItem>
-                        <SelectItem value="sales">Sales</SelectItem>
-                        <SelectItem value="support">Support</SelectItem>
-                        <SelectItem value="hr">Human Resources</SelectItem>
-                        <SelectItem value="finance">Finance</SelectItem>
-                        <SelectItem value="operations">Operations</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Location</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Remote, New York, NY" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="employmentType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Employment Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select employment type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="full-time">Full-time</SelectItem>
-                        <SelectItem value="part-time">Part-time</SelectItem>
-                        <SelectItem value="contract">Contract</SelectItem>
-                        <SelectItem value="internship">Internship</SelectItem>
-                        <SelectItem value="temporary">Temporary</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="salaryFrom"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Salary From</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="e.g. 50000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="salaryTo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Salary To</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="e.g. 70000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="validUntil"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Valid Until</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
-                          >
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormDescription>The job posting will expire on this date.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date()} initialFocus />
+                    </PopoverContent>
+                  </Popover>
+                  <FormDescription>The job posting will expire on this date.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )} />
             </div>
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Job Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Describe the responsibilities, requirements, and qualifications for this position."
-                      className="min-h-[150px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="aboutUs"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>About the Company</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Provide information about your company, culture, and benefits."
-                      className="min-h-[100px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormField control={form.control} name="description" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Job Description</FormLabel>
+                <FormControl><Textarea placeholder="Describe the job..." className="min-h-[150px]" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="aboutUs" render={({ field }) => (
+              <FormItem>
+                <FormLabel>About the Company</FormLabel>
+                <FormControl><Textarea placeholder="Tell candidates about your company..." className="min-h-[100px]" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="tags" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tags</FormLabel>
+                <FormControl><TagsInput value={field.value || []} onChange={field.onChange} /></FormControl>
+                <FormDescription>Enter relevant keywords like "React", "Remote", etc.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )} />
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button variant="outline" type="button" asChild>

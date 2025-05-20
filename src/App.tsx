@@ -192,7 +192,7 @@ function App() {
 <Route path="/tenant/hr/dashboard" element={<PrivateRoute><HRLayout><DashboardPage /></HRLayout></PrivateRoute>} />
 <Route path="/tenant/hr/jobs" element={<PrivateRoute><HRLayout><JobsPage /></HRLayout></PrivateRoute>} />
 <Route path="/tenant/hr/jobs/new" element={<PrivateRoute><HRLayout><NewJobPage /></HRLayout></PrivateRoute>} />
-<Route path="/tenant/hr/job-applicants/:id" element={<PrivateRoute><HRLayout><JobApplicantsPage params={{id: ""}} /></HRLayout></PrivateRoute>} />
+<Route path="/tenant/hr/job-applicants/:id" element={<PrivateRoute><HRLayout><JobApplicantsPage /></HRLayout></PrivateRoute>} />
 <Route path="/tenant/hr/employees" element={<PrivateRoute><HRLayout><EmployeesPage /></HRLayout></PrivateRoute>} />
 <Route path="/tenant/hr/employees/new" element={<PrivateRoute><HRLayout><NewEmployeePage /></HRLayout></PrivateRoute>} />
 <Route path="/tenant/hr/contracts" element={<PrivateRoute><HRLayout><ContratsPage /></HRLayout></PrivateRoute>} />
