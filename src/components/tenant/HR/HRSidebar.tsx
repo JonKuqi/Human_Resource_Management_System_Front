@@ -1,7 +1,7 @@
 "use client"
 
-import { Briefcase, Calendar, Home, LogOut, Settings, Users, Star, FileCheck } from "lucide-react"
-import { Link } from "react-router-dom";
+import { Briefcase, Calendar, Home, LogOut, Settings, Users, Star, FileCheck, MessageSquare } from "lucide-react"
+import { Link } from "react-router-dom"
 import { usePathname } from "next/navigation"
 
 import {
@@ -16,16 +16,19 @@ import {
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { ModeToggle } from "@/src/components/tenant/HR/ModeToggle";
+import { ModeToggle } from "@/src/components/tenant/HR/ModeToggle"
+import { Badge } from "@/components/ui/badge"
 
 export function HRSidebar() {
   const pathname = usePathname()
 
-const isActive = (path: string) => {
-  if (!pathname) return false;
-  return pathname === path || pathname.startsWith(`${path}/`);
-};
+  const isActive = (path: string) => {
+    if (!pathname) return false
+    return pathname === path || pathname.startsWith(`${path}/`)
+  }
 
+  // This would be connected to your chat state in a real app
+  const unreadMessages = 3
 
   return (
     <Sidebar variant="inset">
@@ -89,6 +92,19 @@ const isActive = (path: string) => {
               <Link to="/tenant/hr/contracts">
                 <FileCheck className="h-5 w-5" />
                 <span>Contracts</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={isActive("/tenant/hr/chat")}>
+              <Link to="/tenant/hr/chat">
+                <MessageSquare className="h-5 w-5" />
+                <span>Team Chat</span>
+                {unreadMessages > 0 && (
+                  <Badge className="ml-auto bg-red-500 text-white h-5 w-5 flex items-center justify-center p-0 text-xs">
+                    {unreadMessages}
+                  </Badge>
+                )}
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
