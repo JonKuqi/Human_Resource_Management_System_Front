@@ -25,7 +25,6 @@ import ProfilePage from "./pages/user/profile/profilePage"
 import JoblistPage from "./pages/user/Joblist/JoblistPage"
 import UserHomePage from "./pages/user/UserHomePage";
 
-
 // HR pages
 
 import HRLayout from "./layouts/HRLayout";
@@ -41,6 +40,8 @@ import LeaveRequestPage from "./pages/tenant/HR/LeaveRequestPage";
 import NewLeaveRequestPage from "./pages/tenant/HR/NewLeaveRequestPage";
 import PerformancePage from "./pages/tenant/HR/PerformancePage";
 import NewPerformanceEvaluationPage from "./pages/tenant/HR/NewPerformanceEvaluationPage";
+import RealTimeChat from "./pages/tenant/HR/RealTimeChat";
+import ChatPage from "./pages/tenant/HR/ChatPage"
 
 function App() {
   const PublicLayout = ({ children }: { children: React.ReactNode }) => (
@@ -50,6 +51,7 @@ function App() {
       <Footer />
     </div>
   );
+  console.log("ChatPage:", ChatPage)
 
   return (
     <ThemeProvider>
@@ -201,7 +203,7 @@ function App() {
 <Route path="/tenant/hr/leave-requests/new" element={<PrivateRoute><HRLayout><NewLeaveRequestPage /></HRLayout></PrivateRoute>} />
 <Route path="/tenant/hr/performance" element={<PrivateRoute><HRLayout><PerformancePage /></HRLayout></PrivateRoute>} />
 <Route path="/tenant/hr/performance/new" element={<PrivateRoute><HRLayout><NewPerformanceEvaluationPage /></HRLayout></PrivateRoute>} />
-
+<Route path="/tenant/hr/chat" element={<PrivateRoute><HRLayout><ChatPage /></HRLayout></PrivateRoute>} />
           </Routes>
       </Router>
     </ThemeProvider>
