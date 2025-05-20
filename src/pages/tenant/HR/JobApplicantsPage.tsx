@@ -1,15 +1,20 @@
+import { useParams } from "react-router-dom"
 import { ApplicantsTable } from "@/src/components/tenant/HR/ApplicantsTable"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronLeft } from "lucide-react"
-import Link from "next/link"
+import { Link } from "react-router-dom"
 
-export default function JobApplicantsPage({ params }: { params: { id: string } }) {
+export default function JobApplicantsPage() {
+  const { id: jobId } = useParams<{ id: string }>()
+
+  if (!jobId) return <div>Loading...</div>
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-4 py-6">
       <div className="flex items-center gap-4">
         <Button variant="outline" size="icon" asChild>
-          <Link href="/dashboard/jobs">
+          <Link to="/tenant/hr/jobs">
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Back</span>
           </Link>
@@ -19,28 +24,15 @@ export default function JobApplicantsPage({ params }: { params: { id: string } }
 
       <Card className="border-hr-light-gray">
         <CardHeader>
-          <CardTitle>Senior Software Engineer</CardTitle>
-          <CardDescription>Job ID: {params.id}</CardDescription>
+          <CardTitle>Applicants for Job ID: {jobId}</CardTitle>
+          <CardDescription>Fetched from backend API</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className="rounded-lg bg-hr-lightest-gray p-4">
-              <div className="text-sm font-medium text-muted-foreground">Total Applicants</div>
-              <div className="text-2xl font-bold">24</div>
-            </div>
-            <div className="rounded-lg bg-hr-lightest-gray p-4">
-              <div className="text-sm font-medium text-muted-foreground">New Today</div>
-              <div className="text-2xl font-bold">3</div>
-            </div>
-            <div className="rounded-lg bg-hr-lightest-gray p-4">
-              <div className="text-sm font-medium text-muted-foreground">Shortlisted</div>
-              <div className="text-2xl font-bold">8</div>
-            </div>
-          </div>
+          {/* You can load dynamic stats here later */}
         </CardContent>
       </Card>
 
-      <ApplicantsTable jobId={params.id} />
+      <ApplicantsTable jobId={jobId} />
     </div>
   )
 }
