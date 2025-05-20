@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -17,10 +17,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
+import { jwtDecode } from "jwt-decode"
+
+interface DecodedToken {
+  tenant: string
+  [key: string]: any
+}
+
+interface Industry {
+  industryId: number
+  name: string
+}
 
 const formSchema = z.object({
   jobTitle: z.string().min(2, { message: "Job title must be at least 2 characters." }),
-  department: z.string({ required_error: "Please select a department." }),
+  industryId: z.string({ required_error: "Please select an industry." }),
   location: z.string().min(2, { message: "Location must be at least 2 characters." }),
   employmentType: z.string({ required_error: "Please select an employment type." }),
   salaryFrom: z.string().optional(),
@@ -65,11 +76,43 @@ function TagsInput({ value, onChange }: { value: string[]; onChange: (tags: stri
 }
 
 export function JobPostingForm() {
+  const [tenantId, setTenantId] = useState<string | null>(null)
+  const [industries, setIndustries] = useState<Industry[]>([])
+
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) return
+
+    const decoded: DecodedToken = jwtDecode(token)
+    const schemaName = decoded.tenant
+
+    const fetchTenantIdAndIndustries = async () => {
+      try {
+        const tenantRes = await fetch(`http://localhost:8081/api/v1/public/tenant/filter?schemaName=${schemaName}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const tenantData = await tenantRes.json()
+        if (tenantData.length === 0) throw new Error("Tenant not found by schema")
+        setTenantId(tenantData[0].tenantId)
+
+        const industryRes = await fetch(`http://localhost:8081/api/v1/public/industry`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const industryData = await industryRes.json()
+        setIndustries(industryData)
+      } catch (error) {
+        console.error("Error loading tenant or industry data:", error)
+      }
+    }
+
+    fetchTenantIdAndIndustries()
+  }, [])
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       jobTitle: "",
-      department: "",
+      industryId: "",
       location: "",
       employmentType: "",
       salaryFrom: "",
@@ -84,16 +127,19 @@ export function JobPostingForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       const token = localStorage.getItem("token")
+      if (!token) throw new Error("User is not authenticated")
+      if (!tenantId) throw new Error("Tenant ID not loaded")
 
       const jobRes = await fetch("http://localhost:8081/api/v1/public/job-listing", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          tenant: { tenantId },
           jobTitle: values.jobTitle,
-          department: values.department,
+          industry: { industryId: Number(values.industryId) },
           location: values.location,
           employmentType: values.employmentType,
           salaryFrom: values.salaryFrom,
@@ -101,10 +147,16 @@ export function JobPostingForm() {
           description: values.description,
           aboutUs: values.aboutUs,
           validUntil: values.validUntil,
+          createdAt: format(new Date(), "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"),
         }),
       })
 
-      if (!jobRes.ok) throw new Error("Failed to create job listing")
+      if (!jobRes.ok) {
+        const errorText = await jobRes.text()
+        console.error("Job creation failed:", errorText)
+        throw new Error("Failed to create job listing")
+      }
+
       const createdJob = await jobRes.json()
       const jobId = createdJob.jobListingId
 
@@ -113,7 +165,7 @@ export function JobPostingForm() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ jobListingId: jobId, tag }),
         })
@@ -143,21 +195,17 @@ export function JobPostingForm() {
                   <FormMessage />
                 </FormItem>
               )} />
-              <FormField control={form.control} name="department" render={({ field }) => (
+              <FormField control={form.control} name="industryId" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Department</FormLabel>
+                  <FormLabel>Industry</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select a department" /></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select industry" /></SelectTrigger></FormControl>
                     <SelectContent>
-                      <SelectItem value="engineering">Engineering</SelectItem>
-                      <SelectItem value="design">Design</SelectItem>
-                      <SelectItem value="product">Product</SelectItem>
-                      <SelectItem value="marketing">Marketing</SelectItem>
-                      <SelectItem value="sales">Sales</SelectItem>
-                      <SelectItem value="support">Support</SelectItem>
-                      <SelectItem value="hr">Human Resources</SelectItem>
-                      <SelectItem value="finance">Finance</SelectItem>
-                      <SelectItem value="operations">Operations</SelectItem>
+                      {industries.map(ind => (
+                        <SelectItem key={ind.industryId} value={ind.industryId.toString()}>
+                          {ind.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
