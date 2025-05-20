@@ -20,6 +20,10 @@ body {
   padding: 0;
 }
 
+
+
+
+
 .btn-primary {
   @apply bg-[#2E4053] text-white py-2 px-6 rounded-md hover:bg-[#1C2833] transition-all duration-300 font-medium;
 }

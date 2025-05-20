@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ArrowUpDown, Eye, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
-import Link from "next/link"
+import { Link } from "react-router-dom"
+import { jwtDecode } from "jwt-decode"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -12,87 +13,94 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 
-// Sample data
-const jobListings = [
-  {
-    id: "JOB-2023-001",
-    title: "Senior Software Engineer",
-    department: "Engineering",
-    location: "Remote",
-    type: "Full-time",
-    applicants: 24,
-    posted: "May 1, 2025",
-    expires: "Jun 1, 2025",
-    status: "active",
-  },
-  {
-    id: "JOB-2023-002",
-    title: "Product Designer",
-    department: "Design",
-    location: "New York, NY",
-    type: "Full-time",
-    applicants: 18,
-    posted: "May 3, 2025",
-    expires: "Jun 3, 2025",
-    status: "active",
-  },
-  {
-    id: "JOB-2023-003",
-    title: "Marketing Specialist",
-    department: "Marketing",
-    location: "Remote",
-    type: "Contract",
-    applicants: 12,
-    posted: "May 5, 2025",
-    expires: "Jun 5, 2025",
-    status: "active",
-  },
-  {
-    id: "JOB-2023-004",
-    title: "Customer Support Representative",
-    department: "Support",
-    location: "Chicago, IL",
-    type: "Part-time",
-    applicants: 31,
-    posted: "May 7, 2025",
-    expires: "Jun 7, 2025",
-    status: "active",
-  },
-  {
-    id: "JOB-2023-005",
-    title: "Data Analyst",
-    department: "Analytics",
-    location: "Remote",
-    type: "Full-time",
-    applicants: 16,
-    posted: "May 10, 2025",
-    expires: "Jun 10, 2025",
-    status: "active",
-  },
-  {
-    id: "JOB-2023-006",
-    title: "HR Coordinator",
-    department: "Human Resources",
-    location: "San Francisco, CA",
-    type: "Full-time",
-    applicants: 9,
-    posted: "Apr 15, 2025",
-    expires: "May 15, 2025",
-    status: "expired",
-  },
-]
+
+
+interface JobListing {
+  jobListingId: number
+  jobTitle: string
+  location: string
+  employmentType: string
+  createdAt: string
+  validUntil: string
+  tenant: {
+    tenantId: string
+    name: string
+  }
+}
+
+interface DecodedToken {
+  tenantId: string
+  [key: string]: any
+}
 
 export function JobListingsTable() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [jobListings, setJobListings] = useState<JobListing[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const handleDelete = async (jobId: number) => {
+  const confirmed = window.confirm("Are you sure you want to delete this job listing?");
+  if (!confirmed) return;
+
+  try {
+    const token = localStorage.getItem("token") || "";
+
+    const res = await fetch(`http://localhost:8081/api/v1/public/job-listing/${jobId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (res.ok) {
+      setJobListings((prev) => prev.filter((j) => j.jobListingId !== jobId));
+    } else {
+      const err = await res.text();
+      console.error("Delete failed:", err);
+      alert("Failed to delete job.");
+    }
+  } catch (error) {
+    console.error("Error deleting job:", error);
+    alert("Something went wrong.");
+  }
+};
+
+  useEffect(() => {
+    const fetchJobListings = async () => {
+      try {
+        const token = localStorage.getItem("token") || ""
+        const decoded = jwtDecode<DecodedToken>(token)
+        const tenantId = decoded.tenantId
+
+        const res = await fetch(`http://localhost:8081/api/v1/public/job-listing/filter?tenant.id=${tenantId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        const data = await res.json()
+        setJobListings(data)
+      } catch (err) {
+        console.error("Error fetching job listings:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchJobListings()
+  }, [])
 
   const filteredJobs = jobListings.filter((job) => {
     const matchesSearch =
-      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.location.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesStatus = statusFilter === "all" || job.status === statusFilter
+    const isExpired = new Date(job.validUntil) < new Date()
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "active" && !isExpired) ||
+      (statusFilter === "expired" && isExpired)
 
     return matchesSearch && matchesStatus
   })
@@ -101,27 +109,24 @@ export function JobListingsTable() {
     <Card>
       <CardContent className="p-6">
         <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-          <div className="flex flex-1 items-center space-x-2">
-            <Input
-              placeholder="Search jobs..."
-              className="max-w-sm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center space-x-2">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <Input
+            placeholder="Search jobs..."
+            className="max-w-sm"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
         <div className="mt-6 rounded-md border">
           <Table>
             <TableHeader>
@@ -133,68 +138,76 @@ export function JobListingsTable() {
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </div>
                 </TableHead>
-                <TableHead>Department</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead className="text-center">Applicants</TableHead>
+                <TableHead>Posted</TableHead>
+                <TableHead>Expires</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredJobs.length === 0 ? (
+              {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
-                    No job listings found.
-                  </TableCell>
+                  <TableCell colSpan={8} className="text-center">Loading...</TableCell>
+                </TableRow>
+              ) : filteredJobs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center">No job listings found.</TableCell>
                 </TableRow>
               ) : (
-                filteredJobs.map((job) => (
-                  <TableRow key={job.id}>
-                    <TableCell className="font-medium">{job.id}</TableCell>
-                    <TableCell>{job.title}</TableCell>
-                    <TableCell>{job.department}</TableCell>
-                    <TableCell>{job.location}</TableCell>
-                    <TableCell>{job.type}</TableCell>
-                    <TableCell className="text-center">{job.applicants}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={job.status === "active" ? "default" : "secondary"}
-                        className={job.status === "active" ? "bg-green-500" : "bg-gray-500"}
-                      >
-                        {job.status === "active" ? "Active" : "Expired"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={`/dashboard/jobs/${job.id}/applicants`}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              <span>View Applicants</span>
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/dashboard/jobs/${job.id}/edit`}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              <span>Edit</span>
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Delete</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
+                filteredJobs.map((job) => {
+                  const isExpired = new Date(job.validUntil) < new Date()
+                  return (
+                    <TableRow key={job.jobListingId}>
+                      <TableCell className="font-medium">{job.jobListingId}</TableCell>
+                      <TableCell>{job.jobTitle}</TableCell>
+                      <TableCell>{job.location}</TableCell>
+                      <TableCell>{job.employmentType}</TableCell>
+                      <TableCell>{new Date(job.createdAt).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(job.validUntil).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={isExpired ? "secondary" : "default"}
+                          className={isExpired ? "bg-gray-500" : "bg-green-500"}
+                        >
+                          {isExpired ? "Expired" : "Active"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              {/* <Link href={`/tenant/HR/job/${job.jobListingId}`}> */}
+                              <Link to={`/tenant/hr/job-applicants/${job.jobListingId}`}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Applicants
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to={`/dashboard/jobs/${job.jobListingId}/edit`}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Edit
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => handleDelete(job.jobListingId)}
+                                      >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete
+                                </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
               )}
             </TableBody>
           </Table>

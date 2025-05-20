@@ -12,7 +12,7 @@ const HRLayout: React.FC<{ children: ReactNode }> = ({ children }) => {
           <HRSidebar />
         </div>
         <div className="flex-1 overflow-auto p-4 md:p-8">
-          <div className="max-w-7xl mx-auto">{children}</div>
+          <div className="w-full">{children}</div>
         </div>
       </div>
     </SidebarProvider>
