@@ -46,34 +46,46 @@ const getStatusBadge = (status: string) => {
       return <Badge>{status}</Badge>
   }
 }
-
 export function ApplicantsTable({ jobId }: { jobId: string }) {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [keywordFilter, setKeywordFilter] = useState("")
   const [applicants, setApplicants] = useState<Applicant[]>([])
   const [selectedApplicant, setSelectedApplicant] = useState<Applicant | null>(null)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
 
-  useEffect(() => {
-    const fetchApplicants = async () => {
-      try {
-        const token = localStorage.getItem("token") || ""
-        const response = await fetch(`/api/v1/tenant/application?jobListingId=${jobId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-        const data = await response.json()
-        setApplicants(data)
-      } catch (error) {
-        console.error("Error fetching applicants:", error)
-      }
-    }
+  const fetchApplicants = async () => {
+    try {
+      const token = localStorage.getItem("token") || ""
+      let url = `http://localhost:8081/api/v1/tenant/application/filter?jobListing.jobListingId=${jobId}`
 
+      // If there are CV keywords to filter by
+      if (keywordFilter.trim() !== "") {
+        const keywordParams = keywordFilter
+          .split(",")
+          .map(k => `cvKeywords=${encodeURIComponent(k.trim())}`)
+          .join("&")
+        url = `http://localhost:8081/api/v1/tenant/application?${keywordParams}`
+      }
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      const data = await response.json()
+      setApplicants(data)
+    } catch (error) {
+      console.error("Error fetching applicants:", error)
+    }
+  }
+
+  useEffect(() => {
     if (jobId) {
       fetchApplicants()
     }
-  }, [jobId])
+    // Only re-fetch if keywordFilter changes
+  }, [jobId, keywordFilter])
 
   const filteredApplicants = applicants.filter((applicant) => {
     const matchesSearch =
@@ -89,12 +101,18 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
     <>
       <Card>
         <CardContent className="p-6">
-          <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+          <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 gap-4">
             <Input
               placeholder="Search applicants..."
               className="max-w-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Input
+              placeholder="CV Keyword(s)..."
+              className="max-w-sm"
+              value={keywordFilter}
+              onChange={(e) => setKeywordFilter(e.target.value)}
             />
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
@@ -110,6 +128,7 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
               </SelectContent>
             </Select>
           </div>
+
           <div className="mt-6 rounded-md border">
             <Table>
               <TableHeader>
@@ -126,7 +145,9 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
               <TableBody>
                 {filteredApplicants.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">No applicants found.</TableCell>
+                    <TableCell colSpan={7} className="h-24 text-center">
+                      No applicants found.
+                    </TableCell>
                   </TableRow>
                 ) : (
                   filteredApplicants.map((applicant) => (
@@ -165,6 +186,7 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
           </div>
         </CardContent>
       </Card>
+
 
       {/* View Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
