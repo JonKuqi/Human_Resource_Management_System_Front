@@ -24,6 +24,7 @@ import SkillsPage from "./pages/user/skills/SkillsPage"
 import ProfilePage from "./pages/user/profile/profilePage"
 import JoblistPage from "./pages/user/Joblist/JoblistPage"
 import UserHomePage from "./pages/user/UserHomePage";
+import JobDetailPage from "./pages/user/Joblist/JobDetailPage";
 
 // HR pages
 
@@ -121,6 +122,17 @@ function App() {
         <JoblistPage />
       </UserLayout>
     </PrivateRoute>
+  }
+/>
+<Route
+  path="/user/jobs/:id"
+    element={
+    <PrivateRoute>
+      <UserLayout>
+        <JobDetailPage />
+      </UserLayout>
+    </PrivateRoute>
+  
   }
 />
 
