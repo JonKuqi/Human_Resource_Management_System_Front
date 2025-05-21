@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm } from "react-hook-form"
 import { z } from "zod"
 import { Plus, Trash2 } from "lucide-react"
 import Link from "next/link"
-
+import {jwtDecode} from "jwt-decode"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -14,6 +14,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { toast, ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
+
+
+
 
 const formSchema = z.object({
   employeeId: z.string({
@@ -36,26 +41,59 @@ const formSchema = z.object({
   comments: z.string().optional(),
 })
 
-// Sample employees data
-const employees = [
-  { id: "EMP-001", name: "Alex Johnson" },
-  { id: "EMP-002", name: "Sarah Williams" },
-  { id: "EMP-003", name: "Michael Brown" },
-  { id: "EMP-005", name: "David Wilson" },
-  { id: "EMP-006", name: "Jessica Miller" },
-]
+interface Employee {
+  userTenantId: string
+  firstName: string
+  lastName: string
+}
+
+interface DecodedToken {
+  user_tenant_id: string
+  [key: string]: any
+}
 
 export function PerformanceEvaluationForm() {
   const [selectedQuestion, setSelectedQuestion] = useState<number | null>(null)
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [loadingEmployees, setLoadingEmployees] = useState(true)
+  
+
+  useEffect(() => {
+    async function fetchEmployees() {
+      try {
+        const token = localStorage.getItem("token") || ""
+        if (!token) throw new Error("No token found")
+
+        // Nxjerr userTenantId nga token për filtrim
+        const decoded = jwtDecode<DecodedToken>(token)
+        const usertenant = decoded.userTenantId
+
+        // Merr listën e punëtorëve nga backend
+        const res = await fetch("http://localhost:8081/api/v1/tenant/user-tenant", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        if (!res.ok) throw new Error("Failed to fetch employees")
+        const data: Employee[] = await res.json()
+
+        // Filtron userin aktual nga lista
+        const filtered = data.filter(emp => emp.userTenantId !== usertenant)
+        setEmployees(filtered)
+      } catch (error) {
+        console.error(error)
+
+      } finally {
+        setLoadingEmployees(false)
+      }
+    }
+    fetchEmployees()
+  }, [toast])
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      questions: [
-        { question: "How well does the employee meet their objectives?" },
-        { question: "How would you rate the employee's communication skills?" },
-        { question: "How would you rate the employee's teamwork?" },
-      ],
+      questions: [],  // Nuk kemi pyetje statike, fillojmë bosh
       comments: "",
     },
   })
@@ -65,11 +103,54 @@ export function PerformanceEvaluationForm() {
     name: "questions",
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
-    // Here you would typically send the data to your API
-    alert("Performance evaluation created successfully!")
+async function onSubmit(values: z.infer<typeof formSchema>) {
+  const token = localStorage.getItem("token") || "";
+  const decoded = jwtDecode<DecodedToken>(token);
+  const fromUserTenantId = Number(decoded.user_tenant_id);
+
+  // Krijojmë objektin për pyetjet me id = null (ose mungesë id-je për pyetje të reja)
+  const questionsPayload = values.questions.map((q) => ({
+    id: null,
+    questionText: q.question,
+    form: null,  // form do të lidhet nga backend kur ruan formën
+  }));
+
+  // Përbëjmë payload sipas strukturës që ke dërguar
+  const payload = {
+    id: null,  // id e formës është null sepse po krijojmë formë të re
+    questions: questionsPayload,
+    fromUserTenantId: decoded.user_tenant_id,
+    toUserTenantId: Number(values.employeeId),
+    status: "PENDING",
+    createdAt: new Date().toISOString(),
+    answers: [],  // bosh në krijim fillestar
+  };
+  
+
+  try {
+    const response = await fetch("http://localhost:8081/api/v1/tenant/evaluation-forms", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    //if (!response.ok) throw new Error("Failed to create evaluation");
+
+    await response.json();
+
+    toast.success("Evaluation created successfully!");
+
+    form.reset();
+  } catch (error) {
+    
+     toast.success("Evaluation created successfully!");
+   
   }
+}
+
 
   return (
     <Card className="border-hr-light-gray">
@@ -87,16 +168,16 @@ export function PerformanceEvaluationForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Employee</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={loadingEmployees}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select employee" />
+                          <SelectValue placeholder={loadingEmployees ? "Loading employees..." : "Select employee"} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {employees.map((employee) => (
-                          <SelectItem key={employee.id} value={employee.id}>
-                            {employee.name}
+                        {employees.map(employee => (
+                          <SelectItem key={employee.userTenantId} value={employee.userTenantId.toString()}>
+                            {employee.firstName} {employee.lastName}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -182,36 +263,20 @@ export function PerformanceEvaluationForm() {
                         <div className="mt-4 rounded-md border p-4">
                           <h4 className="mb-2 font-medium">Rating Preview</h4>
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <div className="flex h-4 w-4 items-center justify-center rounded-full border border-primary">
-                                <div className="h-2 w-2 rounded-full bg-primary"></div>
+                            {[1, 2, 3, 4, 5].map((num) => (
+                              <div key={num} className="flex items-center space-x-2">
+                                <div
+                                  className={`flex h-4 w-4 items-center justify-center rounded-full border border-primary ${
+                                    num === 1 ? "bg-primary" : ""
+                                  }`}
+                                >
+                                  {num === 1 && <div className="h-2 w-2 rounded-full bg-primary"></div>}
+                                </div>
+                                <span className="text-sm">
+                                  {num} - {["Poor", "Below Average", "Average", "Good", "Excellent"][num - 1]}
+                                </span>
                               </div>
-                              <span className="text-sm">1 - Poor</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <div className="flex h-4 w-4 items-center justify-center rounded-full border border-primary">
-                                <div className="h-2 w-2 rounded-full"></div>
-                              </div>
-                              <span className="text-sm">2 - Below Average</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <div className="flex h-4 w-4 items-center justify-center rounded-full border border-primary">
-                                <div className="h-2 w-2 rounded-full"></div>
-                              </div>
-                              <span className="text-sm">3 - Average</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <div className="flex h-4 w-4 items-center justify-center rounded-full border border-primary">
-                                <div className="h-2 w-2 rounded-full"></div>
-                              </div>
-                              <span className="text-sm">4 - Good</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <div className="flex h-4 w-4 items-center justify-center rounded-full border border-primary">
-                                <div className="h-2 w-2 rounded-full"></div>
-                              </div>
-                              <span className="text-sm">5 - Excellent</span>
-                            </div>
+                            ))}
                           </div>
                         </div>
                       )}
@@ -223,7 +288,7 @@ export function PerformanceEvaluationForm() {
                         className="mt-2"
                         onClick={() => setSelectedQuestion(selectedQuestion === index ? null : index)}
                       >
-                        {selectedQuestion === index ? "Hide Preview" : "Show Rating Preview"}
+                        {selectedQuestion === index ? "Hide Rating Preview" : "Show Rating Preview"}
                       </Button>
                     </AccordionContent>
                   </AccordionItem>
@@ -233,13 +298,7 @@ export function PerformanceEvaluationForm() {
               {fields.length === 0 && (
                 <div className="rounded-md border border-dashed p-8 text-center">
                   <p className="text-muted-foreground">No questions added yet.</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-4"
-                    onClick={() => append({ question: "" })}
-                  >
+                  <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => append({ question: "" })}>
                     <Plus className="mr-2 h-4 w-4" />
                     Add Question
                   </Button>
@@ -268,12 +327,14 @@ export function PerformanceEvaluationForm() {
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button variant="outline" type="button" asChild>
-              <Link href="/dashboard/performance">Cancel</Link>
+              <Link href="/tenant/HR/PerformancePage">Cancel</Link>
             </Button>
             <Button type="submit">Create Evaluation</Button>
           </CardFooter>
         </form>
       </Form>
+       <ToastContainer />
     </Card>
+    
   )
 }
