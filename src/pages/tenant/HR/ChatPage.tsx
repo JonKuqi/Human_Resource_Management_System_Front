@@ -1,5 +1,6 @@
+"use client";
 import { Chat } from "@/src/components/tenant/HR/Chat"
-
+export const dynamic = 'force-dynamic';
 // Using named export instead of default export
 export function ChatPage() {
   return (

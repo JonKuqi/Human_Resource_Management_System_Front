@@ -1,8 +1,9 @@
+"use client";
 import { Button } from "@/components/ui/button"
 import { PerformanceEvaluationList } from "../../../components/tenant/HR/PerformanceEvaluationList"
 import { Plus } from "lucide-react"
 import Link from "next/link"
-
+export const dynamic = 'force-dynamic';
 export default function PerformancePage() {
   return (
     <div className="space-y-6">

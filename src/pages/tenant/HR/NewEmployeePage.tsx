@@ -1,8 +1,9 @@
+"use client";
 import { EmployeeForm } from "@/src/components/tenant/HR/EmployeeForm"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft } from "lucide-react"
 import Link from "next/link"
-
+export const dynamic = 'force-dynamic';
 export default function NewEmployeePage() {
   return (
     <div className="space-y-6">

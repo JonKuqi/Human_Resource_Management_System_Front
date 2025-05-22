@@ -1,5 +1,5 @@
 "use client"
-
+export const dynamic = 'force-dynamic';
 import { FaUsers, FaClipboardList, FaChartLine, FaCalendarAlt } from "react-icons/fa"
 import Hero from "../components/Hero"
 import FeatureCard from "../components/FeatureCard"

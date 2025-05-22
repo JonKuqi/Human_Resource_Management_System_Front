@@ -1,8 +1,9 @@
+"use client";
 import { Button } from "@/components/ui/button"
 import { JobListingsTable } from "@/src/components/tenant/HR/JobListingTable"
 import { Plus } from "lucide-react"
 import { Link } from "react-router-dom"
-
+export const dynamic = 'force-dynamic';
 export default function JobListingsPage() {
   return (
     <div className="space-y-6">

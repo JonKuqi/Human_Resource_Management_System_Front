@@ -1,10 +1,11 @@
+"use client";
 import { useParams } from "react-router-dom"
 import { ApplicantsTable } from "@/src/components/tenant/HR/ApplicantsTable"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronLeft } from "lucide-react"
 import { Link } from "react-router-dom"
-
+export const dynamic = 'force-dynamic';
 export default function JobApplicantsPage() {
   const { id: jobId } = useParams<{ id: string }>()
 

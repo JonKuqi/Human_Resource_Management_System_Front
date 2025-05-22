@@ -1,8 +1,9 @@
+"use client";
 import { Button } from "@/components/ui/button"
 import { LeaveRequestsTable } from "@/src/components/tenant/HR/LeaveRequestTable"
 import { Plus } from "lucide-react"
 import Link from "next/link"
-
+export const dynamic = 'force-dynamic';
 export default function RealTimeChat() {
   return (
     <div className="space-y-6">

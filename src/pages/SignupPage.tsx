@@ -8,6 +8,7 @@ import Button from "../components/Button"
 import { FaUserPlus } from "react-icons/fa"
 import { useTheme } from "../context/ThemeContext"
 import axios from "axios"
+export const dynamic = 'force-dynamic';
 
 const SignupSchema = Yup.object().shape({
   firstName: Yup.string().required("First name is required").min(2),

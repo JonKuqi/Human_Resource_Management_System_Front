@@ -1,5 +1,5 @@
 "use client"
-
+export const dynamic = 'force-dynamic';
 import { useState } from "react"
 import { FaPlus, FaEdit, FaTrash, FaSearch, FaTimes } from "react-icons/fa"
 import Button from "../../components/Button"

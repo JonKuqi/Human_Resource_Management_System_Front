@@ -1,8 +1,9 @@
+"use client";
 import { LeaveRequestForm } from "@/src/components/tenant/HR/LeaveRequestForm"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft } from "lucide-react"
 import Link from "next/link"
-
+export const dynamic = 'force-dynamic';
 export default function NewLeaveRequestPage() {
   return (
     <div className="space-y-6">

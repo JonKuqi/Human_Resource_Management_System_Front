@@ -1,5 +1,5 @@
 "use client";
-
+export const dynamic = 'force-dynamic';
 // Dynamic User-Role-Permission management page (React + TypeScript)
 // Now injects Bearer token on every API request.
 

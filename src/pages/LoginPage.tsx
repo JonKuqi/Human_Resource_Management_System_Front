@@ -1,5 +1,5 @@
 "use client"
-
+export const dynamic = 'force-dynamic';
 import { Formik, Form } from "formik"
 import * as Yup from "yup"
 import { Link, useNavigate } from "react-router-dom"

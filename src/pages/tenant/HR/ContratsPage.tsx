@@ -1,8 +1,9 @@
+"use client";
 import { Button } from "@/components/ui/button"
 import { ContractsTable } from "@/src/components/tenant/HR/ContractsTable"
 import { Plus } from "lucide-react"
 import Link from "next/link"
-
+export const dynamic = 'force-dynamic';
 export default function ContractsPage() {
   return (
     <div className="space-y-6">

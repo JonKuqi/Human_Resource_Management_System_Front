@@ -1,7 +1,8 @@
+"use client";
 import { DashboardStats } from "@/src/components/tenant/HR/DashboardStats"
 import { RecentActivity } from "@/src/components/tenant/HR/RecentActivity"
 import { UpcomingEvents } from "@/src/components/tenant/HR/UpcomingEvents"
-
+export const dynamic = 'force-dynamic';
 export default function DashboardPage() {
   return (
     <div className="space-y-6">

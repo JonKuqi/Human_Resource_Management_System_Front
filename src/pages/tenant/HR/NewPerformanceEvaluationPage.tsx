@@ -1,8 +1,10 @@
+
+"use client";
 import { PerformanceEvaluationForm } from "../../../components/tenant/HR/PerformanceEvaluationForm"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft } from "lucide-react"
 import Link from "next/link"
-
+export const dynamic = 'force-dynamic';
 export default function NewPerformanceEvaluationPage() {
   return (
     <div className="space-y-6">

@@ -1,8 +1,10 @@
+
+"use client";
 import { JobPostingForm } from "@/src/components/tenant/HR/JobPostingForm"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft } from "lucide-react"
 import { Link } from "react-router-dom"
-
+export const dynamic = 'force-dynamic';
 export default function NewJobPage() {
   return (
     <div className="space-y-6">

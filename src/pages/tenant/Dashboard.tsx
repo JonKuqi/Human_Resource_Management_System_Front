@@ -1,5 +1,5 @@
 "use client";
-
+export const dynamic = 'force-dynamic';
 import { FaUsers, FaFileAlt, FaCalendarAlt, FaBriefcase } from "react-icons/fa"
 import { useTheme } from "../../context/ThemeContext"
 
