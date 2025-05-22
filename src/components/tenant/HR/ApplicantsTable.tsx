@@ -80,6 +80,44 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
     }
   }
 
+const handleStatusChange = async (applicationId: number, newStatus: string) => {
+  const token = localStorage.getItem("token") || ""
+  const applicantToUpdate = applicants.find(app => app.applicationId === applicationId)
+
+  if (!applicantToUpdate) return
+
+  const updatedApplicant = {
+    ...applicantToUpdate,
+    status: newStatus,
+  }
+
+  try {
+    const response = await fetch(`http://localhost:8081/api/v1/tenant/application/${applicationId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(updatedApplicant),
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to update status")
+    }
+
+    setApplicants((prev) =>
+      prev.map((app) =>
+        app.applicationId === applicationId ? { ...app, status: newStatus } : app
+      )
+    )
+  } catch (error) {
+    console.error("Error updating status:", error)
+    alert("Failed to update applicant status.")
+  }
+}
+
+
+
   useEffect(() => {
     if (jobId) {
       fetchApplicants()
@@ -157,7 +195,25 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
                       <TableCell>{applicant.applicantEmail}</TableCell>
                       <TableCell>{applicant.experience}</TableCell>
                       <TableCell>{new Date(applicant.timeOfApplication).toLocaleDateString()}</TableCell>
-                      <TableCell>{getStatusBadge(applicant.status)}</TableCell>
+                      {/* <TableCell>{getStatusBadge(applicant.status)}</TableCell> */}
+                      <TableCell>
+                      <Select
+                        value={applicant.status}
+                        onValueChange={(newStatus) => handleStatusChange(applicant.applicationId, newStatus)}
+                      >
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue placeholder="Change status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="new">New</SelectItem>
+                          <SelectItem value="reviewing">Reviewing</SelectItem>
+                          <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                          <SelectItem value="interviewing">Interviewing</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
