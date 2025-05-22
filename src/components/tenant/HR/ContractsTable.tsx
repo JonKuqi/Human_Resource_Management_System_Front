@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import axios from "axios"
 import { ArrowUpDown, Download, Eye, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 import Link from "next/link"
 
@@ -22,138 +23,137 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 
-// Sample data
-const contracts = [
-  {
-    id: "CON-001",
-    employee: {
-      id: "EMP-001",
-      name: "Alex Johnson",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "AJ",
-    },
-    position: "Senior Developer",
-    department: "Engineering",
-    type: "Permanent",
-    startDate: "Jan 15, 2023",
-    endDate: null,
-    salary: "$85,000",
-    status: "active",
-  },
-  {
-    id: "CON-002",
-    employee: {
-      id: "EMP-002",
-      name: "Sarah Williams",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "SW",
-    },
-    position: "UI/UX Designer",
-    department: "Design",
-    type: "Permanent",
-    startDate: "Mar 10, 2023",
-    endDate: null,
-    salary: "$75,000",
-    status: "active",
-  },
-  {
-    id: "CON-003",
-    employee: {
-      id: "EMP-003",
-      name: "Michael Brown",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "MB",
-    },
-    position: "Marketing Specialist",
-    department: "Marketing",
-    type: "Fixed Term",
-    startDate: "Apr 22, 2023",
-    endDate: "Apr 21, 2025",
-    salary: "$65,000",
-    status: "active",
-  },
-  {
-    id: "CON-004",
-    employee: {
-      id: "EMP-004",
-      name: "Emily Davis",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "ED",
-    },
-    position: "HR Coordinator",
-    department: "HR",
-    type: "Permanent",
-    startDate: "Jun 5, 2023",
-    endDate: null,
-    salary: "$70,000",
-    status: "active",
-  },
-  {
-    id: "CON-005",
-    employee: {
-      id: "EMP-005",
-      name: "David Wilson",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "DW",
-    },
-    position: "Financial Analyst",
-    department: "Finance",
-    type: "Contract",
-    startDate: "Aug 17, 2023",
-    endDate: "Feb 16, 2025",
-    salary: "$90,000",
-    status: "active",
-  },
-  {
-    id: "CON-006",
-    employee: {
-      id: "EMP-006",
-      name: "Jessica Miller",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "JM",
-    },
-    position: "Sales Representative",
-    department: "Sales",
-    type: "Probation",
-    startDate: "Oct 3, 2023",
-    endDate: "Jan 2, 2024",
-    salary: "$60,000",
-    status: "expired",
-  },
-]
+interface UserTenant {
+  userTenantId: number
+  firstName: string
+  lastName: string
+  profilePhoto?: string | null
+}
+
+interface Position {
+  positionId: number
+  title: string
+  description: string
+}
+
+interface Contract {
+  contractId: number
+  userTenant: UserTenant
+  position: Position
+  contractType: string
+  startDate: string
+  endDate: string | null
+  salary: number
+  terms: string
+  createdAt: string
+}
 
 export function ContractsTable() {
+  const [contracts, setContracts] = useState<Contract[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [selectedContract, setSelectedContract] = useState<(typeof contracts)[0] | null>(null)
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null)
+  const [editedContract, setEditedContract] = useState<Contract | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchContracts = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) throw new Error("Tokeni nuk ekziston!")
+
+      const response = await axios.get("http://localhost:8081/api/v1/tenant/contracts", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      setContracts(response.data)
+      setLoading(false)
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError("Unknown error occurred")
+      }
+      setLoading(false)
+    }
+  }
+
+  const deleteContract = async (id: number) => {
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) throw new Error("Tokeni nuk ekziston!")
+
+      await axios.delete(`http://localhost:8081/api/v1/tenant/contracts/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      setContracts((prev) => prev.filter((c) => c.contractId !== id))
+    } catch (err) {
+      console.error("Delete error:", err)
+    }
+  }
+
+  const saveEditedContract = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) throw new Error("Tokeni nuk ekziston!")
+
+      await axios.put(
+        `http://localhost:8081/api/v1/tenant/contracts/${editedContract?.contractId}`,
+        editedContract,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      setContracts((prev) =>
+        prev.map((c) => (c.contractId === editedContract?.contractId ? editedContract! : c))
+      )
+      setIsEditing(false)
+      setSelectedContract(editedContract)
+    } catch (err) {
+      console.error("Save error:", err)
+    }
+  }
+
+  useEffect(() => {
+    fetchContracts()
+  }, [])
 
   const filteredContracts = contracts.filter((contract) => {
+    const fullName = `${contract.userTenant.firstName} ${contract.userTenant.lastName}`
     const matchesSearch =
-      contract.employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contract.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contract.department.toLowerCase().includes(searchTerm.toLowerCase())
+      fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contract.position?.title.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesType = typeFilter === "all" || contract.type.toLowerCase() === typeFilter.toLowerCase()
-    const matchesStatus = statusFilter === "all" || contract.status === statusFilter
+    const matchesType =
+      typeFilter === "all" || contract.contractType.toLowerCase() === typeFilter.toLowerCase()
+
+    const isExpired = contract.endDate && new Date(contract.endDate) < new Date()
+    const contractStatus = isExpired ? "expired" : "active"
+    const matchesStatus = statusFilter === "all" || contractStatus === statusFilter
 
     return matchesSearch && matchesType && matchesStatus
   })
+
+  if (loading) return <p>Loading contracts...</p>
+  if (error) return <p className="text-red-500">Error: {error}</p>
 
   return (
     <>
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
-            <div className="flex flex-1 items-center space-x-2">
-              <Input
-                placeholder="Search contracts..."
-                className="max-w-sm"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+            <Input
+              placeholder="Search contracts..."
+              className="max-w-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
             <div className="flex flex-col space-y-2 md:flex-row md:space-x-2 md:space-y-0">
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="w-[180px]">
@@ -184,12 +184,7 @@ export function ContractsTable() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[100px]">ID</TableHead>
-                  <TableHead>
-                    <div className="flex items-center">
-                      Employee
-                      <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </div>
-                  </TableHead>
+                  <TableHead>Employee</TableHead>
                   <TableHead>Position</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Start Date</TableHead>
@@ -206,80 +201,87 @@ export function ContractsTable() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredContracts.map((contract) => (
-                    <TableRow key={contract.id}>
-                      <TableCell className="font-medium">{contract.id}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage
-                              src={contract.employee.avatar || "/placeholder.svg"}
-                              alt={contract.employee.name}
-                            />
-                            <AvatarFallback className="bg-hr-dark-blue text-hr-lightest-gray text-xs">
-                              {contract.employee.initials}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span>{contract.employee.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{contract.position}</TableCell>
-                      <TableCell>{contract.type}</TableCell>
-                      <TableCell>{contract.startDate}</TableCell>
-                      <TableCell>{contract.endDate || "N/A"}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={contract.status === "active" ? "default" : "outline"}
-                          className={contract.status === "active" ? "bg-green-500" : "border-red-500 text-red-500"}
-                        >
-                          {contract.status === "active" ? "Active" : "Expired"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedContract(contract)
-                                setViewDialogOpen(true)
-                              }}
-                            >
-                              <Eye className="mr-2 h-4 w-4" />
-                              <span>View Details</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Download className="mr-2 h-4 w-4" />
-                              <span>Download Contract</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link href={`/dashboard/contracts/${contract.id}/edit`}>
-                                <Pencil className="mr-2 h-4 w-4" />
-                                <span>Edit</span>
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              <span>Delete</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  filteredContracts.map((contract) => {
+                    const fullName = `${contract.userTenant.firstName} ${contract.userTenant.lastName}`
+                    const initials = `${contract.userTenant.firstName[0] ?? ""}${contract.userTenant.lastName[0] ?? ""}`
+                    const isExpired = contract.endDate && new Date(contract.endDate) < new Date()
+                    const status = isExpired ? "expired" : "active"
+
+                    return (
+                      <TableRow key={contract.contractId}>
+                        <TableCell className="font-medium">{contract.contractId}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage
+                                src={"/placeholder.svg"}
+                                alt={fullName}
+                              />
+                              <AvatarFallback className="bg-hr-dark-blue text-hr-lightest-gray text-xs">
+                                {initials}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{fullName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{contract.position.title}</TableCell>
+                        <TableCell>{contract.contractType}</TableCell>
+                        <TableCell>{contract.startDate}</TableCell>
+                        <TableCell>{contract.endDate || "N/A"}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={status === "active" ? "default" : "outline"}
+                            className={status === "active" ? "bg-green-500" : "border-red-500 text-red-500"}
+                          >
+                            {status === "active" ? "Active" : "Expired"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
+  setSelectedContract(contract);
+  setEditedContract({ ...contract });
+  setIsEditing(false);
+  setViewDialogOpen(true);
+}}>
+
+                                <Eye className="mr-2 h-4 w-4" />
+                                <span>View Details</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Download className="mr-2 h-4 w-4" />
+                                <span>Download Contract</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/contracts/${contract.contractId}/edit`}>
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  <span>Edit</span>
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive" onClick={() => deleteContract(contract.contractId)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Delete</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
                 )}
               </TableBody>
             </Table>
           </div>
         </CardContent>
       </Card>
-
-      {/* View Contract Dialog */}
+          {/* View Contract Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -287,76 +289,125 @@ export function ContractsTable() {
             <DialogDescription>View the details of the employee contract.</DialogDescription>
           </DialogHeader>
 
-          {selectedContract && (
+          {selectedContract && editedContract && (
             <div className="grid gap-6 py-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-12 w-12">
                   <AvatarImage
-                    src={selectedContract.employee.avatar || "/placeholder.svg"}
-                    alt={selectedContract.employee.name}
+                    src={"/placeholder.svg"}
+                    alt={`${editedContract.userTenant.firstName} ${editedContract.userTenant.lastName}`}
                   />
                   <AvatarFallback className="bg-hr-dark-blue text-hr-lightest-gray">
-                    {selectedContract.employee.initials}
+                    {`${editedContract.userTenant.firstName[0]}${editedContract.userTenant.lastName[0]}`}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-lg font-medium">{selectedContract.employee.name}</h3>
+                  <h3 className="text-lg font-medium">
+                    {editedContract.userTenant.firstName} {editedContract.userTenant.lastName}
+                  </h3>
                   <p className="text-sm text-muted-foreground">
-                    {selectedContract.position} • {selectedContract.department}
+                    {editedContract.position.title}
                   </p>
                 </div>
-                <div className="ml-auto">{selectedContract.id}</div>
+                <div className="ml-auto">{editedContract.contractId}</div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Contract Type</Label>
-                  <p className="text-sm font-medium">{selectedContract.type}</p>
+                  {isEditing ? (
+                    <Input
+                      value={editedContract.contractType}
+                      onChange={(e) =>
+                        setEditedContract({ ...editedContract, contractType: e.target.value })
+                      }
+                    />
+                  ) : (
+                    <p className="text-sm font-medium">{editedContract.contractType}</p>
+                  )}
                 </div>
                 <div>
                   <Label>Status</Label>
                   <div className="mt-1">
-                    <Badge
-                      variant={selectedContract.status === "active" ? "default" : "outline"}
-                      className={selectedContract.status === "active" ? "bg-green-500" : "border-red-500 text-red-500"}
-                    >
-                      {selectedContract.status === "active" ? "Active" : "Expired"}
-                    </Badge>
+                    {(() => {
+                      const isExpired =
+                        editedContract.endDate && new Date(editedContract.endDate) < new Date()
+                      const status = isExpired ? "expired" : "active"
+                      return (
+                        <Badge
+                          variant={status === "active" ? "default" : "outline"}
+                          className={status === "active" ? "bg-green-500" : "border-red-500 text-red-500"}
+                        >
+                          {status === "active" ? "Active" : "Expired"}
+                        </Badge>
+                      )
+                    })()}
                   </div>
                 </div>
                 <div>
                   <Label>Start Date</Label>
-                  <p className="text-sm font-medium">{selectedContract.startDate}</p>
+                  {isEditing ? (
+                    <Input
+                      type="date"
+                      value={editedContract.startDate}
+                      onChange={(e) =>
+                        setEditedContract({ ...editedContract, startDate: e.target.value })
+                      }
+                    />
+                  ) : (
+                    <p className="text-sm font-medium">{editedContract.startDate}</p>
+                  )}
                 </div>
                 <div>
                   <Label>End Date</Label>
-                  <p className="text-sm font-medium">{selectedContract.endDate || "N/A"}</p>
+                  {isEditing ? (
+                    <Input
+                      type="date"
+                      value={editedContract.endDate || ""}
+                      onChange={(e) =>
+                        setEditedContract({ ...editedContract, endDate: e.target.value })
+                      }
+                    />
+                  ) : (
+                    <p className="text-sm font-medium">{editedContract.endDate || "N/A"}</p>
+                  )}
                 </div>
                 <div>
                   <Label>Salary</Label>
-                  <p className="text-sm font-medium">{selectedContract.salary}</p>
+                  {isEditing ? (
+                    <Input
+                      type="number"
+                      value={editedContract.salary}
+                      onChange={(e) =>
+                        setEditedContract({ ...editedContract, salary: Number(e.target.value) })
+                      }
+                    />
+                  ) : (
+                    <p className="text-sm font-medium">${editedContract.salary.toLocaleString()}</p>
+                  )}
                 </div>
                 <div>
-                  <Label>Department</Label>
-                  <p className="text-sm font-medium">{selectedContract.department}</p>
+                  <Label>Position Description</Label>
+                  <p className="text-sm font-medium">{editedContract.position.description}</p>
                 </div>
               </div>
 
               <div>
                 <Label>Contract Terms</Label>
-                <div className="mt-2 rounded-md border p-4 text-sm">
-                  <p>This employment contract is made between the Company and the Employee named above.</p>
-                  <br />
-                  <p>
-                    The Employee agrees to perform duties as assigned by the Company in accordance with Company policies
-                    and procedures.
-                  </p>
-                  <br />
-                  <p>
-                    The Employee will receive the salary stated above, paid on a monthly basis, subject to applicable
-                    tax and other withholdings.
-                  </p>
-                </div>
+                {isEditing ? (
+                  <textarea
+                    className="w-full rounded border p-2 text-sm"
+                    rows={4}
+                    value={editedContract.terms}
+                    onChange={(e) =>
+                      setEditedContract({ ...editedContract, terms: e.target.value })
+                    }
+                  />
+                ) : (
+                  <div className="mt-2 rounded-md border p-4 text-sm">
+                    <p>{editedContract.terms}</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -365,16 +416,15 @@ export function ContractsTable() {
             <Button variant="secondary" onClick={() => setViewDialogOpen(false)}>
               Close
             </Button>
-            <Button variant="outline">
-              <Download className="mr-2 h-4 w-4" />
-              Download
-            </Button>
-            {selectedContract?.status === "active" && (
-              <Button asChild>
-                <Link href={`/dashboard/contracts/${selectedContract.id}/edit`}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit
-                </Link>
+            {isEditing ? (
+              <Button variant="secondary" onClick={saveEditedContract}>
+
+                 Save
+              </Button>
+            ) : (
+              <Button variant="secondary" onClick={() => setIsEditing(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
               </Button>
             )}
           </DialogFooter>
