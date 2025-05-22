@@ -49,7 +49,7 @@ const LoginPage = () => {
 
     if (role === "TENANT_USER") {
       const userRolesResponse = await axios.get(
-        `http://localhost:8081/api/v1/tenant/user-role/by-user-tenant/${userTenantId}`,
+        `http://localhost:8081/api/v1/tenant/user-role/filter?userTenantId=/${userTenantId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
