@@ -71,7 +71,7 @@ export function PerformanceEvaluationList() {
         const data: EvaluationForm[] = await res.json()
         setEvaluations(data)
 
-        // Build userTenantId list to resolve emails
+        
         const ids = Array.from(
           new Set(data.flatMap((e) => [e.fromUserTenantId, e.toUserTenantId]))
         )

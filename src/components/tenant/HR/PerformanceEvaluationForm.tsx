@@ -64,11 +64,11 @@ export function PerformanceEvaluationForm() {
         const token = localStorage.getItem("token") || ""
         if (!token) throw new Error("No token found")
 
-        // Nxjerr userTenantId nga token për filtrim
+        
         const decoded = jwtDecode<DecodedToken>(token)
         const usertenant = decoded.userTenantId
 
-        // Merr listën e punëtorëve nga backend
+        
         const res = await fetch("http://localhost:8081/api/v1/tenant/user-tenant", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -77,7 +77,6 @@ export function PerformanceEvaluationForm() {
         if (!res.ok) throw new Error("Failed to fetch employees")
         const data: Employee[] = await res.json()
 
-        // Filtron userin aktual nga lista
         const filtered = data.filter(emp => emp.userTenantId !== usertenant)
         setEmployees(filtered)
       } catch (error) {
@@ -93,7 +92,7 @@ export function PerformanceEvaluationForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      questions: [],  // Nuk kemi pyetje statike, fillojmë bosh
+      questions: [],  
       comments: "",
     },
   })
@@ -108,22 +107,22 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
   const decoded = jwtDecode<DecodedToken>(token);
   const fromUserTenantId = Number(decoded.user_tenant_id);
 
-  // Krijojmë objektin për pyetjet me id = null (ose mungesë id-je për pyetje të reja)
+  
   const questionsPayload = values.questions.map((q) => ({
     id: null,
     questionText: q.question,
-    form: null,  // form do të lidhet nga backend kur ruan formën
+    form: null,  
   }));
 
-  // Përbëjmë payload sipas strukturës që ke dërguar
+  
   const payload = {
-    id: null,  // id e formës është null sepse po krijojmë formë të re
+    id: null,  
     questions: questionsPayload,
     fromUserTenantId: decoded.user_tenant_id,
     toUserTenantId: Number(values.employeeId),
     status: "PENDING",
     createdAt: new Date().toISOString(),
-    answers: [],  // bosh në krijim fillestar
+    answers: [], 
   };
   
 
@@ -137,7 +136,7 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
       body: JSON.stringify(payload),
     });
 
-    //if (!response.ok) throw new Error("Failed to create evaluation");
+   
 
     await response.json();
 

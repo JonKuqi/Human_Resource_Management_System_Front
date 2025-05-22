@@ -80,7 +80,7 @@ export function EmployeesTable() {
         const allUserTenants: Employee[] = userTenantRes.data
         const allContracts: Contract[] = contractsRes.data
 
-        // Filtro user-tenant-in e kyçur
+        
         const visibleUserTenants = allUserTenants.filter(
           (e) => e.user.email !== loggedInEmail
         )
