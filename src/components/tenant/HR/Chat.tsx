@@ -9,6 +9,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { ScrollArea } from "@/components/ui/scroll-area"
 import SockJS from 'sockjs-client'
 import { Client } from '@stomp/stompjs'
+import axios from "axios"
+import { jwtDecode } from "jwt-decode"
 
 enum MessageType {
   Chat = "CHAT",
@@ -16,13 +18,29 @@ enum MessageType {
   Leave = "LEAVE"
 }
 
-interface Message {
-  sender: string
-  content: string
-  type: MessageType
-  timestamp: Date
+interface UserInfo {
+  firstName: string
+  lastName: string
 }
+interface Message {
+    sender: string
+    content: string
+    type: MessageType
+    timestamp: Date
+    userTenantId?: number  // shto këtë fushë, opsionale nëse nuk ka gjithmonë
+  }
+  
+  interface DecodedToken {
+    role: string;
+    user_tenant_id: number;
+  }
+  
+  const avatarColors = ["bg-blue-600", "bg-green-600", "bg-red-600", "bg-yellow-600", "bg-purple-600"]
 
+function getColorForName(name: string) {
+  const index = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) % avatarColors.length
+  return avatarColors[index]
+}
 function parseJwt(token: string) {
   try {
     const base64Payload = token.split('.')[1]
@@ -34,18 +52,60 @@ function parseJwt(token: string) {
 }
 
 export function Chat() {
+  const [fullName, setFullName] = useState("")
+  const [initials, setInitials] = useState("")
+ const [userNames, setUserNames] = useState<Record<string, string>>({}) 
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const stompClient = useRef<Client | null>(null)
 
-  const token = localStorage.getItem("jwt")
+  const token = localStorage.getItem("token")
   const payload = token ? parseJwt(token) : null
-  const email = payload?.sub ?? "Unknown User"
-  const initials = email.slice(0, 2).toUpperCase()
+
+ 
+
+  const userTenantId = payload?.user_tenant_id
+
+  
+  const fetchUserName = async (tenantId: number | string) => {
+    if (!token) return
+    try {
+      const res = await axios.get(
+        `http://localhost:8081/api/v1/tenant/user-tenant/${tenantId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      )
+      
+      const { firstName, lastName } = res.data
+      const full = `${firstName} ${lastName}`
+      setFullName(full)
+      setInitials((firstName[0] + lastName[0]).toUpperCase())
+      setUserNames(prev => ({
+        ...prev,
+        [tenantId]: full
+      }))
+      console.log(firstName+lastName)
+
+    } catch (err) {
+      console.error("Failed to fetch user name for tenantId:", tenantId, err)
+    }
+  }
+
+  // Merr emrin e userit bazuar ne userTenantId, nëse nuk e kemi e marrim
+  
+  useEffect(() => {
+    if (userTenantId) {
+      fetchUserName(userTenantId)
+    }
+  }, [userTenantId])
 
   useEffect(() => {
-    if (!email) return
+
+    if (!fullName) return
+    
+    
 
     const socket = new SockJS("http://localhost:8081/ws")
 
@@ -66,7 +126,7 @@ export function Chat() {
 
         client.publish({
           destination: "/app/chat.addUser",
-          body: JSON.stringify({ sender: email, type: MessageType.Join, content: '' })
+          body: JSON.stringify({ sender: fullName, type: MessageType.Join, content: '' })
         })
       }
     })
@@ -77,7 +137,7 @@ export function Chat() {
     return () => {
       client.deactivate()
     }
-  }, [email])
+  }, [fullName])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -87,7 +147,7 @@ export function Chat() {
     if (newMessage.trim() === "" || !stompClient.current || !stompClient.current.connected) return
 
     const message = {
-      sender: email,
+      sender: fullName,
       content: newMessage,
       type: MessageType.Chat,
       timestamp: new Date()
@@ -136,52 +196,84 @@ export function Chat() {
       <CardHeader className="px-4 py-3 border-b">
         <CardTitle className="text-xl text-hr-darker-blue">HR Team Chat</CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 p-0 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="flex flex-col p-4 space-y-6">
-            {messages.map((message, index) => {
-              const isCurrentUser = message.sender === email
+      <CardContent className="flex-1 p-0 overflow-hidden" style={{ height: "500px", width: "100%" }}>
+      <ScrollArea className="max-h-[500px] w-full max-w-[600px]" style={{ overflowY: "auto" }}>
+      <div className="flex flex-col p-4 space-y-6">
+    {messages.map((message, index) => {
+      
+      const isCurrentUser = message.sender === fullName
 
-              return (
-                <div key={index} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"} gap-2`}>
-                  {!isCurrentUser && (
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="/placeholder.svg" alt={message.sender} />
-                      <AvatarFallback className="bg-hr-dark-blue text-hr-lightest-gray text-xs">
-                        {message.sender.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-
-                  <div className={`flex flex-col ${isCurrentUser ? "items-end" : "items-start"}`}>
-                    <div className="flex items-center gap-2">
-                      {!isCurrentUser && <span className="text-sm font-medium">{message.sender}</span>}
-                      <span className="text-xs text-muted-foreground">{formatTime(message.timestamp)}</span>
-                    </div>
-
-                    <div
-                      className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
-                        isCurrentUser ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-900"
-                      }`}
-                    >
-                      {message.content}
-                    </div>
-                  </div>
-
-                  {isCurrentUser && (
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="/placeholder.svg" alt={message.sender} />
-                      <AvatarFallback className="bg-hr-dark-blue text-hr-lightest-gray text-xs">
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                </div>
-              )
-            })}
-            <div ref={messagesEndRef} />
+      if (message.type === MessageType.Join) {
+        // Merr emrin e plotë sipas userTenantId
+       
+        return (
+          <div key={index} className="flex justify-center text-blue-600 italic text-sm">
+            {message.sender} joined the chat
           </div>
-        </ScrollArea>
+        )
+      }
+
+      if (message.type === MessageType.Leave) {
+       
+
+        return (
+          <div key={index} className="flex justify-center text-gray-500 italic text-sm">
+            {message.sender} left the chat
+          </div>
+        )
+      }
+
+      return (
+        <div key={index} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"} gap-2`}>
+          {!isCurrentUser && (
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className={`${getColorForName(message.sender)} text-white text-xs`}>
+
+               {message.sender
+    .split(" ")
+    .map(word => word[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          )}
+
+          <div className={`flex flex-col ${isCurrentUser ? "items-end" : "items-start"}`}>
+            <div className="flex items-center gap-2">
+              {!isCurrentUser && <span className="text-sm font-medium">{message.sender}</span>}
+              <span className="text-xs text-muted-foreground">{formatTime(message.timestamp)}</span>
+            </div>
+            <div
+  className={`max-w-[20rem] rounded-lg px-3 py-2 text-sm ${
+    isCurrentUser ? "bg-blue-700 text-white" : "bg-gray-200 text-gray-900"
+  }`}
+  style={{ wordWrap: "break-word", whiteSpace: "pre-wrap" }}
+>
+              {message.content}
+            </div>
+          </div>
+
+          {isCurrentUser && (
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className={`${getColorForName(message.sender)} text-white text-xs`}>
+
+                {fullName
+    .split(" ")
+    .map(word => word[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+          )}
+        </div>
+      )
+    })}
+    <div ref={messagesEndRef} />
+  </div>
+</ScrollArea>
+
       </CardContent>
       <CardFooter className="p-3 border-t">
         <div className="flex w-full items-center gap-2">
