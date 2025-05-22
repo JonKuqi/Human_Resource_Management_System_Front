@@ -9,7 +9,7 @@ export default function EmployeesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-hr-darker-blue">Employees</h1>
         <Button asChild>
-          <Link href="/dashboard/employees/new">
+          <Link href="/tenant/HR/NewEmployeePage">
             <Plus className="mr-2 h-4 w-4" />
             Add Employee
           </Link>
