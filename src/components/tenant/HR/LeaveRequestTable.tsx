@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ArrowUpDown, Check, Eye, MoreHorizontal, X } from "lucide-react"
+import axios from "axios"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -28,136 +29,189 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
-// Sample data
-const leaveRequests = [
-  {
-    id: "LR-001",
-    employee: {
-      id: "EMP-001",
-      name: "Alex Johnson",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "AJ",
-    },
-    type: "Annual Leave",
-    startDate: "May 20, 2025",
-    endDate: "May 25, 2025",
-    duration: "5 days",
-    reason: "Family vacation",
-    status: "pending",
-  },
-  {
-    id: "LR-002",
-    employee: {
-      id: "EMP-002",
-      name: "Sarah Williams",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "SW",
-    },
-    type: "Sick Leave",
-    startDate: "May 15, 2025",
-    endDate: "May 16, 2025",
-    duration: "2 days",
-    reason: "Doctor's appointment",
-    status: "approved",
-  },
-  {
-    id: "LR-003",
-    employee: {
-      id: "EMP-003",
-      name: "Michael Brown",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "MB",
-    },
-    type: "Personal Leave",
-    startDate: "May 18, 2025",
-    endDate: "May 18, 2025",
-    duration: "1 day",
-    reason: "Personal matters",
-    status: "pending",
-  },
-  {
-    id: "LR-004",
-    employee: {
-      id: "EMP-005",
-      name: "David Wilson",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "DW",
-    },
-    type: "Annual Leave",
-    startDate: "Jun 1, 2025",
-    endDate: "Jun 10, 2025",
-    duration: "10 days",
-    reason: "Summer vacation",
-    status: "pending",
-  },
-  {
-    id: "LR-005",
-    employee: {
-      id: "EMP-006",
-      name: "Jessica Miller",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "JM",
-    },
-    type: "Sick Leave",
-    startDate: "May 12, 2025",
-    endDate: "May 13, 2025",
-    duration: "2 days",
-    reason: "Not feeling well",
-    status: "rejected",
-  },
-]
+interface Employee {
+  id: string
+  name: string
+  avatar?: string
+  initials: string
+}
+
+interface User {
+  username: string;
+  // Mund të shtoni fusha të tjera si `firstName`, `lastName`, etj.
+}
+
+interface UserTenant {
+  userTenantId: number;
+  username: string;       // Ka edhe username në userTenant
+  firstName: string;      // Nga backend vjen firstName këtu
+  lastName: string;       // Po ashtu lastName
+  avatar?: string;
+  user: User;
+}
+
+
+interface LeaveRequest {
+  leaveRequestId: number;
+  userTenant: UserTenant; // Tani `userTenant` ka një fushë `user`
+  leaveText: string;
+  startDate: string; // ISO string expected from backend
+  endDate: string;
+  reason: string;
+  status: "PENDING" | "APPROVED" | "REJECTED" | string;
+  duration: string;
+}
+
 
 export function LeaveRequestsTable() {
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
-  const [selectedRequest, setSelectedRequest] = useState<(typeof leaveRequests)[0] | null>(null)
+  const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null)
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [approveDialogOpen, setApproveDialogOpen] = useState(false)
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false)
   const [approvalComment, setApprovalComment] = useState("")
   const [rejectionReason, setRejectionReason] = useState("")
 
+  // Fetch leave requests from backend
+  useEffect(() => {
+    fetchLeaveRequests()
+  }, [])
+
+  // Funksioni për të marrë të dhënat nga backend
+  async function fetchLeaveRequests() {
+    try {
+      const token = localStorage.getItem("token")
+
+      if (!token) {
+        throw new Error("Tokeni nuk ekziston!")
+      }
+  
+      // Dërgo kërkesën me tokenin në header
+      const response = await axios.get("http://localhost:8081/api/v1/tenant/leave-request/", {
+        headers: {
+          Authorization: `Bearer ${token}`, // Dërgo tokenin në Authorization header
+        },
+      })
+      const data = response.data
+      // Përpunojmë data për të llogaritur duration në ditë
+      const enriched = data.map((lr: any) => ({
+        ...lr,
+        duration: getDurationInDays(lr.startDate, lr.endDate),
+      }))
+      setLeaveRequests(enriched)
+    } catch (err) {
+      console.error(err)
+      // mund të shtosh notifikim gabimi këtu
+    }
+  }
+
+  // Funksioni për të llogaritur ditët midis datave
+  function getDurationInDays(start: string, end: string) {
+    const startDate = new Date(start)
+    const endDate = new Date(end)
+    const diffMs = endDate.getTime() - startDate.getTime()
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1 // përfshin edhe ditën e fundit
+    return diffDays + (diffDays === 1 ? " day" : " days")
+  }
+
+  // Filtrimi i kërkesave
   const filteredRequests = leaveRequests.filter((request) => {
+    // Kontrolloni nëse `userTenant` dhe `username` janë të pranishme para se të përdorni `toLowerCase()`
     const matchesSearch =
-      request.employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.id.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesStatus = statusFilter === "all" || request.status === statusFilter
-    const matchesType = typeFilter === "all" || request.type.toLowerCase().includes(typeFilter.toLowerCase())
-
-    return matchesSearch && matchesStatus && matchesType
-  })
-
+      (request.userTenant?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      request.leaveRequestId.toString().toLowerCase().includes(searchTerm.toLowerCase()));
+  
+    const matchesStatus = statusFilter === "all" || request.status.toLowerCase() === statusFilter.toLowerCase();
+    const matchesType = typeFilter === "all" || request.leaveText.toLowerCase().includes(typeFilter.toLowerCase());
+  
+    return matchesSearch && matchesStatus && matchesType;
+  });
+  
+  // Funksioni për të marrë badge për statusin
   const getStatusBadge = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "pending":
-        return <Badge className="bg-yellow-500">Pending</Badge>
+        return <Badge className="bg-yellow-500 capitalize">Pending</Badge>
       case "approved":
-        return <Badge className="bg-green-500">Approved</Badge>
+        return <Badge className="bg-green-500 capitalize">Approved</Badge>
       case "rejected":
         return (
-          <Badge variant="outline" className="text-red-500 border-red-500">
+          <Badge variant="outline" className="text-red-500 border-red-500 capitalize">
             Rejected
           </Badge>
         )
       default:
-        return <Badge>{status}</Badge>
+        return <Badge className="capitalize">{status}</Badge>
     }
   }
 
-  const handleApprove = () => {
-    console.log("Approved request:", selectedRequest?.id, "Comment:", approvalComment)
-    setApproveDialogOpen(false)
-    setApprovalComment("")
-    // Here you would typically update the status in your API
+  // Funksioni për të përditësuar statusin e kërkesës
+  async function updateLeaveRequestStatus(id: number, status: string) {
+    const leaveRequest = leaveRequests.find((lr) => lr.leaveRequestId === id)
+    if (!leaveRequest) return
+  
+    const { duration, ...rest } = leaveRequest
+    const updatedLeaveRequest = { ...rest, status }
+  
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) throw new Error("Tokeni nuk ekziston!")
+  
+      // Përditëso statusin
+      const res = await axios.put(
+        `http://localhost:8081/api/v1/tenant/leave-request/${id}`,
+        updatedLeaveRequest,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      const updatedLR = res.data
+  
+      // Dërgo POST për krijimin e notification-it
+      if (status === "APPROVED" || status === "REJECTED") {
+        const notificationPayload = {
+          title: status === "APPROVED" ? "Leave Request Approved" : "Leave Request Rejected",
+          description: `Your leave request from ${updatedLR.startDate} to ${updatedLR.endDate} was ${status.toLowerCase()}.`,
+          userTenant: updatedLR.userTenant,
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // +30 ditë
+        };
+        
+        await axios.post(
+          "http://localhost:8081/api/v1/tenant/notification",
+          notificationPayload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+      }
+  
+      // Përditëso listën në frontend
+      setLeaveRequests((prev) => prev.map((lr) => (lr.leaveRequestId === id ? updatedLR : lr)))
+      setApprovalComment("")
+      setRejectionReason("")
+    } catch (err) {
+      console.error(err)
+      // Shto notifikim gabimi në UI nëse dëshiron
+    }
+  }
+  
+
+  // Funksioni për të aprovuar kërkesën
+  function handleApprove() {
+    if (selectedRequest) {
+      updateLeaveRequestStatus(selectedRequest.leaveRequestId, "APPROVED")
+      setApproveDialogOpen(false)
+      setSelectedRequest(null)
+    }
   }
 
-  const handleReject = () => {
-    console.log("Rejected request:", selectedRequest?.id, "Reason:", rejectionReason)
-    setRejectDialogOpen(false)
-    setRejectionReason("")
-    // Here you would typically update the status in your API
+  // Funksioni për të refuzuar kërkesën
+  function handleReject() {
+    if (selectedRequest) {
+      updateLeaveRequestStatus(selectedRequest.leaveRequestId, "REJECTED")
+      setRejectDialogOpen(false)
+      setSelectedRequest(null)
+    }
   }
 
   return (
@@ -180,9 +234,12 @@ export function LeaveRequestsTable() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="annual">Annual Leave</SelectItem>
-                  <SelectItem value="sick">Sick Leave</SelectItem>
-                  <SelectItem value="personal">Personal Leave</SelectItem>
+                  <SelectItem value="annual leave">Annual Leave</SelectItem>
+                  <SelectItem value="sick leave">Sick Leave</SelectItem>
+                  <SelectItem value="personal leave">Personal Leave</SelectItem>
+                  <SelectItem value="maternity leave">Maternity Leave</SelectItem>
+                  <SelectItem value="paternity leave">Paternity Leave</SelectItem>
+                  <SelectItem value="unpaid leave">Unpaid Leave</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -225,28 +282,28 @@ export function LeaveRequestsTable() {
                   </TableRow>
                 ) : (
                   filteredRequests.map((request) => (
-                    <TableRow key={request.id}>
-                      <TableCell className="font-medium">{request.id}</TableCell>
+                    <TableRow key={request.leaveRequestId}>
+                      <TableCell className="font-medium">{request.leaveRequestId}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage
-                              src={request.employee.avatar || "/placeholder.svg"}
-                              alt={request.employee.name}
-                            />
-                            <AvatarFallback className="bg-hr-dark-blue text-hr-lightest-gray text-xs">
-                              {request.employee.initials}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span>{request.employee.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{request.type}</TableCell>
+  <div className="flex items-center gap-3">
+    <Avatar className="h-8 w-8">
+      <AvatarImage
+        src={request.userTenant.avatar || "/placeholder.svg"}
+        alt={`${request.userTenant.firstName} ${request.userTenant.lastName}`}
+      />
+      <AvatarFallback className="bg-hr-dark-blue text-hr-lightest-gray text-xs">
+        {request.userTenant.firstName?.[0].toUpperCase() || "?"}
+      </AvatarFallback>
+    </Avatar>
+    <span>{request.userTenant.firstName} {request.userTenant.lastName}</span>
+  </div>
+</TableCell>
+                      <TableCell className="capitalize">{request.leaveText}</TableCell>
                       <TableCell>{request.duration}</TableCell>
                       <TableCell>
-                        <div className="flex flex-col">
-                          <span className="text-xs text-muted-foreground">From: {request.startDate}</span>
-                          <span className="text-xs text-muted-foreground">To: {request.endDate}</span>
+                        <div className="flex flex-col text-xs text-muted-foreground">
+                          <span>From: {new Date(request.startDate).toLocaleDateString()}</span>
+                          <span>To: {new Date(request.endDate).toLocaleDateString()}</span>
                         </div>
                       </TableCell>
                       <TableCell>{getStatusBadge(request.status)}</TableCell>
@@ -268,7 +325,7 @@ export function LeaveRequestsTable() {
                               <Eye className="mr-2 h-4 w-4" />
                               <span>View Details</span>
                             </DropdownMenuItem>
-                            {request.status === "pending" && (
+                            {request.status.toLowerCase() === "pending" && (
                               <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
@@ -316,16 +373,16 @@ export function LeaveRequestsTable() {
               <div className="flex items-center gap-4">
                 <Avatar className="h-10 w-10">
                   <AvatarImage
-                    src={selectedRequest.employee.avatar || "/placeholder.svg"}
-                    alt={selectedRequest.employee.name}
+                    src={selectedRequest.userTenant.avatar || "/placeholder.svg"}
+                    alt={selectedRequest.userTenant.firstName}
                   />
                   <AvatarFallback className="bg-hr-dark-blue text-hr-lightest-gray">
-                    {selectedRequest.employee.initials}
+                    {selectedRequest.userTenant.firstName.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-medium">{selectedRequest.employee.name}</h3>
-                  <p className="text-sm text-muted-foreground">{selectedRequest.id}</p>
+                  <h3 className="font-medium">{selectedRequest.userTenant.firstName}</h3>
+                  <p className="text-sm text-muted-foreground">ID: {selectedRequest.leaveRequestId}</p>
                 </div>
                 <div className="ml-auto">{getStatusBadge(selectedRequest.status)}</div>
               </div>
@@ -333,7 +390,7 @@ export function LeaveRequestsTable() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Leave Type</Label>
-                  <p className="text-sm">{selectedRequest.type}</p>
+                  <p className="text-sm capitalize">{selectedRequest.leaveText}</p>
                 </div>
                 <div>
                   <Label>Duration</Label>
@@ -341,11 +398,11 @@ export function LeaveRequestsTable() {
                 </div>
                 <div>
                   <Label>Start Date</Label>
-                  <p className="text-sm">{selectedRequest.startDate}</p>
+                  <p className="text-sm">{new Date(selectedRequest.startDate).toLocaleDateString()}</p>
                 </div>
                 <div>
                   <Label>End Date</Label>
-                  <p className="text-sm">{selectedRequest.endDate}</p>
+                  <p className="text-sm">{new Date(selectedRequest.endDate).toLocaleDateString()}</p>
                 </div>
               </div>
 
@@ -360,7 +417,7 @@ export function LeaveRequestsTable() {
             <Button variant="secondary" onClick={() => setViewDialogOpen(false)}>
               Close
             </Button>
-            {selectedRequest?.status === "pending" && (
+            {selectedRequest?.status.toLowerCase() === "pending" && (
               <>
                 <Button
                   variant="outline"
@@ -401,9 +458,9 @@ export function LeaveRequestsTable() {
             <div className="grid gap-4 py-4">
               <div className="flex items-center gap-4">
                 <div>
-                  <h3 className="font-medium">{selectedRequest.employee.name}</h3>
+                  <h3 className="font-medium">{selectedRequest.userTenant.firstName}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {selectedRequest.type} • {selectedRequest.duration}
+                    {selectedRequest.leaveText} • {selectedRequest.duration}
                   </p>
                 </div>
               </div>
@@ -445,9 +502,9 @@ export function LeaveRequestsTable() {
             <div className="grid gap-4 py-4">
               <div className="flex items-center gap-4">
                 <div>
-                  <h3 className="font-medium">{selectedRequest.employee.name}</h3>
+                  <h3 className="font-medium">{selectedRequest.userTenant.firstName}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {selectedRequest.type} • {selectedRequest.duration}
+                    {selectedRequest.leaveText} • {selectedRequest.duration}
                   </p>
                 </div>
               </div>
