@@ -8,7 +8,7 @@ export default function NewJobPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="outline" size="icon" asChild>
-          <Link to="/tenant/hr/jobs">
+          <Link to="/tenant/jobs">
             <ChevronLeft className="h-4 w-4" />
             <span className="sr-only">Back</span>
           </Link>

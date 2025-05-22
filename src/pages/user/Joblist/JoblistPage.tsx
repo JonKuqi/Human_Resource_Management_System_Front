@@ -1,206 +1,186 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+"use client";
 
-export default function JobListings() {
+import type React from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams } from "react-router-dom"
+// import JobListingFilter from "../pages/../components/job-listing/JobListingFilter"
+import JobListingFilter from "@/src/components/job-listing/JobListingFilter"
+import JobListingCard from "@/src/components/job-listing/JobListingCard"
+import JobListingPagination from "@/src/components/job-listing/JobListingPagination"
+// import Navbar from "../components/Navbar"
+// import "../styles/JobListingPage.css"
+import "../../../styles/JobListingPage.css"
+
+
+// Mock industries data for fallback
+const mockIndustries = [
+  { industry_id: 1, name: "Healthcare" },
+  { industry_id: 2, name: "Finance" },
+  { industry_id: 3, name: "Technology" },
+  { industry_id: 4, name: "Education" },
+  { industry_id: 5, name: "Human Resources" },
+  { industry_id: 6, name: "Manufacturing" },
+  { industry_id: 7, name: "Retail" },
+]
+
+const JobListingPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [jobListings, setJobListings] = useState<any[]>([])
+  const [filteredListings, setFilteredListings] = useState<any[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(5)
+  const [totalPages, setTotalPages] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Get current job listings for pagination
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const currentListings = filteredListings.slice(indexOfFirstItem, indexOfLastItem)
+
+  useEffect(() => {
+    const fetchJobListings = async () => {
+      setLoading(true)
+      setError(null)
+
+      try {
+        const response = await fetch("http://localhost:8081/api/v1/public/job-listing")
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`)
+        }
+
+        const data = await response.json()
+        setJobListings(data)
+
+        // Apply filters from URL params
+        applyFilters(data)
+      } catch (err) {
+        console.error("Failed to fetch job listings:", err)
+        setError(err instanceof Error ? err.message : "Failed to load job listings")
+        setJobListings([])
+        setFilteredListings([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchJobListings()
+  }, [searchParams]) // Re-fetch when search params change
+
+  const applyFilters = (listings: any[]) => {
+    const keyword = searchParams.get("keyword") || ""
+    const location = searchParams.get("location") || ""
+    const industry = searchParams.get("industry") || ""
+    const employmentType = searchParams.get("employmentType") || ""
+
+    let filtered = [...listings]
+
+    if (keyword) {
+      filtered = filtered.filter(
+        (job) =>
+          job.jobTitle.toLowerCase().includes(keyword.toLowerCase()) ||
+          job.description.toLowerCase().includes(keyword.toLowerCase()),
+      )
+    }
+
+    if (location) {
+      filtered = filtered.filter((job) => job.location.toLowerCase().includes(location.toLowerCase()))
+    }
+
+    if (industry) {
+      filtered = filtered.filter((job) => job.industryId === Number.parseInt(industry))
+    }
+
+    if (employmentType) {
+      filtered = filtered.filter((job) => job.employment_type.toLowerCase() === employmentType.toLowerCase())
+    }
+
+    setFilteredListings(filtered)
+    setTotalPages(Math.ceil(filtered.length / itemsPerPage))
+    setCurrentPage(1) // Reset to first page when filters change
+  }
+
+const handlePageChange = (pageNumber: number) => {
+  setCurrentPage(pageNumber)
+  if (typeof window !== "undefined") {
+    window.scrollTo(0, 0)
+  }
+}
+
+
+  const handleFilterSubmit = (filters: any) => {
+    // Update URL params
+    const params: any = {}
+    if (filters.keyword) params.keyword = filters.keyword
+    if (filters.location) params.location = filters.location
+    if (filters.industry) params.industry = filters.industry
+    if (filters.employmentType) params.employmentType = filters.employmentType
+
+    setSearchParams(params)
+  }
+
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold text-dark-blue-gray mb-6">Job Listings Management</h1>
+    <div className="job-listing-page">
+      <div className="job-listing-container">
+        <div className="job-listing-header">
+          <h1>Find Your Perfect Job</h1>
+          <p>Browse through our curated list of job opportunities</p>
+        </div>
 
-      <Tabs defaultValue="post" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-8">
-          <TabsTrigger value="post">Post New Job</TabsTrigger>
-          <TabsTrigger value="manage">Manage Listings</TabsTrigger>
-        </TabsList>
+        <JobListingFilter
+          industries={mockIndustries}
+          onSubmit={handleFilterSubmit}
+          initialValues={{
+            keyword: searchParams.get("keyword") || "",
+            location: searchParams.get("location") || "",
+            industry: searchParams.get("industry") || "",
+            employmentType: searchParams.get("employmentType") || "",
+          }}
+        />
 
-        <TabsContent value="post">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create Job Listing</CardTitle>
-              <CardDescription>Fill out the form below to create a new job listing for your company.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="job-title">Job Title</Label>
-                    <Input id="job-title" placeholder="e.g. Senior Software Engineer" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="industry">Industry</Label>
-                    <Select>
-                      <SelectTrigger id="industry">
-                        <SelectValue placeholder="Select industry" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="tech">Technology</SelectItem>
-                        <SelectItem value="finance">Finance</SelectItem>
-                        <SelectItem value="healthcare">Healthcare</SelectItem>
-                        <SelectItem value="education">Education</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Input id="location" placeholder="e.g. New York, NY or Remote" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="employment-type">Employment Type</Label>
-                    <Select>
-                      <SelectTrigger id="employment-type">
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="full-time">Full-time</SelectItem>
-                        <SelectItem value="part-time">Part-time</SelectItem>
-                        <SelectItem value="contract">Contract</SelectItem>
-                        <SelectItem value="internship">Internship</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="salary-from">Salary Range (From)</Label>
-                    <Input id="salary-from" type="number" placeholder="Minimum salary" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="salary-to">Salary Range (To)</Label>
-                    <Input id="salary-to" type="number" placeholder="Maximum salary" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="valid-until">Valid Until</Label>
-                    <Input id="valid-until" type="date" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="tags">Tags (comma separated)</Label>
-                    <Input id="tags" placeholder="e.g. javascript, react, remote" />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Job Description</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Describe the job responsibilities, requirements, and qualifications..."
-                    className="min-h-[150px]"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="about-us">About the Company</Label>
-                  <Textarea
-                    id="about-us"
-                    placeholder="Provide information about your company..."
-                    className="min-h-[100px]"
-                  />
-                </div>
-
-                <Button type="submit" className="w-full md:w-auto bg-dark-blue-gray hover:bg-very-dark-blue-gray">
-                  Publish Job Listing
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="manage">
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Job Listings</CardTitle>
-              <CardDescription>View and manage all your active job listings.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {/* Sample job listings - in a real app, these would be fetched from the backend */}
-                <div className="border rounded-lg p-6 bg-white">
-                  <div className="flex flex-col md:flex-row justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-dark-blue-gray">Senior Frontend Developer</h3>
-                      <p className="text-gray-600">Technology • Full-time • New York, NY</p>
-                    </div>
-                    <div className="mt-2 md:mt-0">
-                      <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-sm">Active</span>
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-700">
-                      Posted on: <span className="font-medium">May 1, 2023</span> • Valid until:{" "}
-                      <span className="font-medium">June 30, 2023</span>
-                    </p>
-                  </div>
-
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">12 applicants</span>
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm">
-                      View Applicants
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      Edit Listing
-                    </Button>
-                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                      Close Listing
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="border rounded-lg p-6 bg-white">
-                  <div className="flex flex-col md:flex-row justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-dark-blue-gray">Product Manager</h3>
-                      <p className="text-gray-600">Technology • Full-time • Remote</p>
-                    </div>
-                    <div className="mt-2 md:mt-0">
-                      <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-sm">Active</span>
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-700">
-                      Posted on: <span className="font-medium">April 15, 2023</span> • Valid until:{" "}
-                      <span className="font-medium">June 15, 2023</span>
-                    </p>
-                  </div>
-
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">8 applicants</span>
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm">
-                      View Applicants
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      Edit Listing
-                    </Button>
-                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
-                      Close Listing
-                    </Button>
-                  </div>
-                </div>
+        <div className="job-listing-results">
+          {loading ? (
+            <div className="job-listing-loading">
+              <p>Loading jobs...</p>
+            </div>
+          ) : error ? (
+            <div className="job-listing-error">
+              <p>Error: {error}</p>
+              <p>Please try again later or contact support if the problem persists.</p>
+            </div>
+          ) : filteredListings.length === 0 ? (
+            <div className="job-listing-empty">
+              <p>No jobs found matching your criteria. Try adjusting your filters.</p>
+            </div>
+          ) : (
+            <>
+              <div className="job-listing-count">
+                <p>{filteredListings.length} jobs found</p>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+
+              <div className="job-listing-cards">
+                {currentListings.map((job) => (
+                  <JobListingCard
+                    key={job.jobListingId ?? `job-${job.jobTitle}-${job.tenantId}`}
+                    job={job}
+                  /> 
+                  ))}
+              </div>
+
+              {totalPages > 1 && (
+                <JobListingPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
+
+export default JobListingPage

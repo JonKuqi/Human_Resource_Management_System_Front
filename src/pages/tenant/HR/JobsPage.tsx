@@ -10,13 +10,13 @@ export default function JobListingsPage() {
         <h1 className="text-3xl font-bold text-hr-darker-blue">Job Listings</h1>
         <div className="flex gap-2">
           <Button asChild>
-            <Link to="/dashboard/jobs/new">
+            <Link to="/tenant/jobs/new">
               <Plus className="mr-2 h-4 w-4" />
               Post New Job
             </Link>
           </Button>
           <Button asChild variant="secondary">
-            <Link to="/tenant/hr/jobs/new">
+            <Link to="/tenant/jobs/new">
               <Plus className="mr-2 h-4 w-4" />
               Add Job
             </Link>

@@ -1,0 +1,64 @@
+.job-listing-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+
+.pagination-numbers {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pagination-button {
+  min-width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  color: #2e4053;
+  border: 1px solid #bdc3c7;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background-color: #f4f6f6;
+}
+
+.pagination-button.active {
+  background-color: #2e4053;
+  color: white;
+  border-color: #2e4053;
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-prev,
+.pagination-next {
+  padding: 0 1rem;
+}
+
+.pagination-ellipsis {
+  margin: 0 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .pagination-button {
+    min-width: 35px;
+    height: 35px;
+  }
+
+  .pagination-prev,
+  .pagination-next {
+    padding: 0 0.75rem;
+  }
+}

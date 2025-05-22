@@ -45,7 +45,6 @@ interface UserSkill {
   userSkillsId: number;
   skill: SkillDto;
   value: number;
-  description?: string;
   issuedAt: string;
   validUntil?: string | null;
 }
@@ -79,7 +78,6 @@ export default function SkillsManagement() {
     name: "",
     type: "",
     value: 50,
-    description: "",
   });
   
   const token = getToken();
@@ -89,7 +87,7 @@ export default function SkillsManagement() {
     headers: { Authorization: `Bearer ${token}` },
   };
   const resetForm = () => {
-    setSkillForm({ skillId:0, name: "", type: "", value: 50, description: "" });
+    setSkillForm({ skillId: 0, name: "", type: "", value: 50 });
     setSelectedSkill(null);
     setIsEditMode(false);
     setSearchQuery("");
@@ -145,16 +143,14 @@ export default function SkillsManagement() {
       userSkillsId: 0,
       skill,
       value: 50,
-      description: "",
       issuedAt: new Date().toISOString().slice(0, 10),
       validUntil: null,
     });
     setSkillForm({
-      skillId: skill.skillId,   // Kjo është e rëndësishme
+      skillId: skill.skillId,
       name: skill.name,
       type: skill.type,
       value: 50,
-      description: "",
     });
     setShowResults(false);
     setSearchQuery("");
@@ -198,7 +194,6 @@ export default function SkillsManagement() {
         {
           skill: { skillId },
           value: skillForm.value,
-          description: skillForm.description,
           userGeneral: { userGeneralId },
           issuedAt: new Date().toISOString().slice(0, 10),
         },
@@ -233,7 +228,6 @@ export default function SkillsManagement() {
         {
           skill: { skillId: skillForm.skillId },
           value: skillForm.value,
-          description: skillForm.description,
           userGeneral: { userGeneralId },
           issuedAt: selectedSkill.issuedAt,
           validUntil: selectedSkill.validUntil,
@@ -265,7 +259,6 @@ export default function SkillsManagement() {
       name: userSkill.skill.name,
       type: userSkill.skill.type,
       value: userSkill.value,
-      description: userSkill.description || "",
     });
     setIsEditMode(true);
   };
@@ -332,7 +325,7 @@ export default function SkillsManagement() {
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            setSkillForm({ skillId:0 ,name: "", type: "", value: 50, description: "" })
+                            setSkillForm({ skillId:0 ,name: "", type: "", value: 50 })
                           }
                         >
                           <X className="h-4 w-4" />
@@ -387,16 +380,6 @@ export default function SkillsManagement() {
                     value={[skillForm.value]}
                     onValueChange={(value) => setSkillForm({ ...skillForm, value: value[0] })}
                     className="py-4"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="skill-description">Description</Label>
-                  <Textarea
-                    id="skill-description"
-                    placeholder="Describe your experience with this skill..."
-                    value={skillForm.description}
-                    onChange={(e) => setSkillForm({ ...skillForm, description: e.target.value })}
                   />
                 </div>
 
@@ -508,13 +491,6 @@ export default function SkillsManagement() {
                         </div>
                         <div className="text-right text-xs text-gray-500 mt-1">{skill.value}%</div>
                       </div>
-
-                      {skill.description && (
-                        <div className="mt-4 text-sm text-gray-700">
-                          <div className="font-medium mb-1">Description:</div>
-                          <p>{skill.description}</p>
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
