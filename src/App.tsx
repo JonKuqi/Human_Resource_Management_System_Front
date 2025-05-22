@@ -43,6 +43,14 @@ import NewPerformanceEvaluationPage from "./pages/tenant/HR/NewPerformanceEvalua
 import RealTimeChat from "./pages/tenant/HR/RealTimeChat";
 import ChatPage from "./pages/tenant/HR/ChatPage"
 
+import EmployeeLayout from "./layouts/EmployeeLayout";
+import EmployeeDashboardPage from "./pages/tenant/Employee/DashboardPage";
+import EmployeeLeaveRequestPage from "./pages/tenant/Employee/LeaveRequestPage";
+import EmployeeContractPage from "./pages/tenant/Employee/ContractPage";
+import EmployeeEvaluationPage from "./pages/tenant/Employee/EvalutationPage";
+import EmployeePayrollPage from "./pages/tenant/Employee/PayrollPage";
+import EmployeeChatPage from "./pages/tenant/Employee/Teamchat";
+import EmployeeNotificationsPage from "./pages/tenant/Employee/NotificationPage";
 function App() {
   const PublicLayout = ({ children }: { children: React.ReactNode }) => (
     <div className="flex flex-col min-h-screen">
@@ -204,7 +212,15 @@ function App() {
 <Route path="/tenant/hr/performance" element={<PrivateRoute><HRLayout><PerformancePage /></HRLayout></PrivateRoute>} />
 <Route path="/tenant/hr/performance/new" element={<PrivateRoute><HRLayout><NewPerformanceEvaluationPage /></HRLayout></PrivateRoute>} />
 <Route path="/tenant/hr/chat" element={<PrivateRoute><HRLayout><ChatPage /></HRLayout></PrivateRoute>} />
-          </Routes>
+
+<Route path="/tenant/employee/dashboard" element={<PrivateRoute><EmployeeLayout><EmployeeDashboardPage /></EmployeeLayout></PrivateRoute>} />
+          <Route path="/tenant/employee/leave-request" element={<PrivateRoute><EmployeeLayout><EmployeeLeaveRequestPage /></EmployeeLayout></PrivateRoute>} />
+          <Route path="/tenant/employee/contract" element={<PrivateRoute><EmployeeLayout><EmployeeContractPage /></EmployeeLayout></PrivateRoute>} />
+          <Route path="/tenant/employee/evaluation" element={<PrivateRoute><EmployeeLayout><EmployeeEvaluationPage /></EmployeeLayout></PrivateRoute>} />
+          <Route path="/tenant/employee/payroll" element={<PrivateRoute><EmployeeLayout><EmployeePayrollPage /></EmployeeLayout></PrivateRoute>} />
+          <Route path="/tenant/employee/chat" element={<PrivateRoute><EmployeeLayout><EmployeeChatPage /></EmployeeLayout></PrivateRoute>} />
+          <Route path="/tenant/employee/notifications" element={<PrivateRoute><EmployeeLayout><EmployeeNotificationsPage /></EmployeeLayout></PrivateRoute>} />
+        </Routes>
       </Router>
     </ThemeProvider>
   );
