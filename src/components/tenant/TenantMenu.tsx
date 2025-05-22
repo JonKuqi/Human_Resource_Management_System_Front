@@ -101,10 +101,12 @@ const menuPages = [
   {
     id: "hr-chat",
     name: "Team Chat",
-    path: "/tenant/hr/chat",
+    path: "/tenant/chat",
     permission: "GET:/api/v1/tenant/chat",
     icon: <MessageSquare className="h-5 w-5" />,
     hasBadge: true,
+    alwaysVisible: true,
+
   },
 ];
 
