@@ -1,52 +1,27 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { CalendarIcon } from "lucide-react"
-import { format } from "date-fns"
-import { toast } from "react-toastify"
 import axios from "axios"
-import "react-toastify/dist/ReactToastify.css"
-
-import { useEffect, useState } from "react";
-
-
-
-
-export default function MyComponent() {
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  if (!isClient) return null; // ose një loader
-
-  return (
-    <div>
-      {/* tani është e sigurt të përdorësh document/window */}
-    </div>
-  );
-}
-
-
+import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
+  FormMessage
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue
 } from "@/components/ui/select"
 import {
   Card,
@@ -54,20 +29,20 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
+  CardTitle
 } from "@/components/ui/card"
 import {
   Popover,
   PopoverContent,
-  PopoverTrigger,
+  PopoverTrigger
 } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { CalendarIcon } from "lucide-react"
+import { toast, ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
+
+
 
 const formSchema = z.object({
   firstName: z.string().min(2),
@@ -87,54 +62,74 @@ const formSchema = z.object({
   zip: z.string().min(2),
 })
 
+interface Department {
+  departmentId: number
+  name: string
+}
+
 export function EmployeeForm({ onSuccess }: { onSuccess?: () => void }) {
   const [activeTab, setActiveTab] = useState("personal")
+  const [departments, setDepartments] = useState<Department[]>([])
+
   const form = useForm<z.infer<typeof formSchema>>({
-   resolver: zodResolver(formSchema),
-  mode: "onChange",
-defaultValues: {
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: "",
-  position: "",
-  joinDate: new Date(),
-  salary: "",
-  country: "",
-  city: "",
-  street: "",
-  zip: "",
-  gender: "", // ✅ shtoje këtë nëse mungon
-  department: "", // ✅ shtoje këtë nëse mungon
-  contractType: "", // ✅ shtoje këtë nëse mungon
-  contractEnd: undefined, // ose mos e përfshi fare që të jetë opsionale
-},
+    resolver: zodResolver(formSchema),
+    mode: "onChange",
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      position: "",
+      joinDate: new Date(),
+      salary: "",
+      country: "",
+      city: "",
+      street: "",
+      zip: "",
+      gender: "",
+      department: "",
+      contractType: "",
+      contractEnd: undefined,
+    },
   })
 
-
-  
-  /* ---------------- Axios instance with token ---------------- */
   const API = axios.create({
     baseURL: "http://localhost:8081/api/v1",
     withCredentials: true,
-  });
+  })
 
-  API.interceptors.request.use(
-    (config) => {
-      const token = localStorage.getItem("token");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+  API.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token")
+    if (token) config.headers.Authorization = `Bearer ${token}`
+    return config
+  })
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await API.get("/tenant/department")
+        setDepartments(res.data)
+      } catch (err) {
+        toast.error("Failed to fetch departments")
       }
-      return config;
-    },
-    (err) => Promise.reject(err)
-  );
-
+    }
+    fetchDepartments()
+  }, [])
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      
-      const response = await API.post("/tenant/user-tenant/employees", {
+
+        const API = axios.create({
+    baseURL: "http://localhost:8081/api/v1",
+    withCredentials: true,
+  })
+
+  API.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token")
+    if (token) config.headers.Authorization = `Bearer ${token}`
+    return config
+  })
+      const response=await API.post("/tenant/user-tenant/employees", {
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,
@@ -151,9 +146,14 @@ defaultValues: {
         city: values.city,
         street: values.street,
         zip: values.zip,
+      
       })
+      
       toast.success("Employee added successfully!")
-      if (onSuccess) onSuccess()
+      
+
+      
+      form.reset();
     } catch (error) {
       toast.error("Failed to save employee")
     }
@@ -167,16 +167,18 @@ defaultValues: {
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="personal">Personal Information</TabsTrigger>
               <TabsTrigger value="employment">Employment Details</TabsTrigger>
               <TabsTrigger value="contract">Contract Information</TabsTrigger>
             </TabsList>
 
+            {/* PERSONAL INFO */}
             <TabsContent value="personal" className="mt-4">
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  {/* First Name */}
                   <FormField control={form.control} name="firstName" render={({ field }) => (
                     <FormItem>
                       <FormLabel>First Name</FormLabel>
@@ -184,6 +186,7 @@ defaultValues: {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  {/* Last Name */}
                   <FormField control={form.control} name="lastName" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Last Name</FormLabel>
@@ -191,6 +194,7 @@ defaultValues: {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  {/* Email */}
                   <FormField control={form.control} name="email" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Email</FormLabel>
@@ -198,6 +202,7 @@ defaultValues: {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  {/* Phone */}
                   <FormField control={form.control} name="phone" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Phone</FormLabel>
@@ -205,6 +210,7 @@ defaultValues: {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  {/* Gender */}
                   <FormField control={form.control} name="gender" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Gender</FormLabel>
@@ -224,16 +230,32 @@ defaultValues: {
               </CardContent>
             </TabsContent>
 
+            {/* EMPLOYMENT */}
             <TabsContent value="employment" className="mt-4">
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  {/* Department */}
                   <FormField control={form.control} name="department" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Department</FormLabel>
-                      <FormControl><Input placeholder="Engineering" {...field} /></FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select department" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {departments.map(dep => (
+                            <SelectItem key={dep.departmentId} value={dep.name}>
+                              {dep.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )} />
+                  {/* Position */}
                   <FormField control={form.control} name="position" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Position</FormLabel>
@@ -241,6 +263,7 @@ defaultValues: {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  {/* Country */}
                   <FormField control={form.control} name="country" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Country</FormLabel>
@@ -248,6 +271,7 @@ defaultValues: {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  {/* City */}
                   <FormField control={form.control} name="city" render={({ field }) => (
                     <FormItem>
                       <FormLabel>City</FormLabel>
@@ -255,6 +279,7 @@ defaultValues: {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  {/* Street */}
                   <FormField control={form.control} name="street" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Street</FormLabel>
@@ -262,6 +287,7 @@ defaultValues: {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  {/* ZIP */}
                   <FormField control={form.control} name="zip" render={({ field }) => (
                     <FormItem>
                       <FormLabel>ZIP Code</FormLabel>
@@ -269,6 +295,7 @@ defaultValues: {
                       <FormMessage />
                     </FormItem>
                   )} />
+                  {/* Join Date */}
                   <FormField control={form.control} name="joinDate" render={({ field }) => (
                     <FormItem className="flex flex-col">
                       <FormLabel>Join Date</FormLabel>
@@ -292,6 +319,7 @@ defaultValues: {
               </CardContent>
             </TabsContent>
 
+            {/* CONTRACT */}
             <TabsContent value="contract" className="mt-4">
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -340,21 +368,20 @@ defaultValues: {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end">
-<Button
-  type="submit"
-  disabled={!form.formState.isValid}
-  className={`bg-[#1C2833] text-white hover:bg-[#273746] px-4 py-2 rounded-md transition ${
-    !form.formState.isValid ? "opacity-50 cursor-not-allowed" : ""
-  }`}
->
-  Save Employee
-</Button>
-
+                <Button
+                  type="submit"
+                  disabled={!form.formState.isValid}
+                  className={`bg-[#1C2833] text-white hover:bg-[#273746] px-4 py-2 rounded-md transition ${!form.formState.isValid ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  Save Employee
+                </Button>
               </CardFooter>
             </TabsContent>
           </Tabs>
         </form>
       </Form>
+      <ToastContainer />
     </Card>
+    
   )
 }

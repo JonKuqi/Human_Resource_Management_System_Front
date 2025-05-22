@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
-import { ArrowUpDown, Eye, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
+import { useEffect, useState } from "react"
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react"
 import Link from "next/link"
+import axios from "axios"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -10,84 +11,126 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { toast, ToastContainer } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
-// Sample data
-const employees = [
-  {
-    id: "EMP-001",
-    name: "Alex Johnson",
-    email: "alex.johnson@company.com",
-    department: "Engineering",
-    position: "Senior Developer",
-    joinDate: "Jan 15, 2023",
-    status: "active",
-  },
-  {
-    id: "EMP-002",
-    name: "Sarah Williams",
-    email: "sarah.williams@company.com",
-    department: "Design",
-    position: "UI/UX Designer",
-    joinDate: "Mar 10, 2023",
-    status: "active",
-  },
-  {
-    id: "EMP-003",
-    name: "Michael Brown",
-    email: "michael.brown@company.com",
-    department: "Marketing",
-    position: "Marketing Specialist",
-    joinDate: "Apr 22, 2023",
-    status: "active",
-  },
-  {
-    id: "EMP-004",
-    name: "Emily Davis",
-    email: "emily.davis@company.com",
-    department: "HR",
-    position: "HR Coordinator",
-    joinDate: "Jun 5, 2023",
-    status: "active",
-  },
-  {
-    id: "EMP-005",
-    name: "David Wilson",
-    email: "david.wilson@company.com",
-    department: "Finance",
-    position: "Financial Analyst",
-    joinDate: "Aug 17, 2023",
-    status: "on-leave",
-  },
-  {
-    id: "EMP-006",
-    name: "Jessica Miller",
-    email: "jessica.miller@company.com",
-    department: "Sales",
-    position: "Sales Representative",
-    joinDate: "Oct 3, 2023",
-    status: "inactive",
-  },
-]
+interface Department {
+  departmentId: number
+  name: string
+}
+
+interface Contract {
+  userTenant: {
+    userTenantId: number
+  }
+  position: {
+    title: string
+    department: {
+      name: string
+    }
+  }
+}
+
+interface Employee {
+  userTenantId: number
+  firstName: string
+  lastName: string
+  phone: string
+  profilePhoto?: string
+  createdAt: string
+  address: {
+    country: string
+    city: string
+    street: string
+    zip: string
+  }
+  user: {
+    email: string
+  }
+  departmentName?: string
+  positionTitle?: string
+}
 
 export function EmployeesTable() {
-  const [searchTerm, setSearchTerm] = useState("")
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [contracts, setContracts] = useState<Contract[]>([])
   const [departmentFilter, setDepartmentFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [searchTerm, setSearchTerm] = useState("")
 
-  const filteredEmployees = employees.filter((employee) => {
+  const token = localStorage.getItem("token") || ""
+  const payload = token ? JSON.parse(atob(token.split(".")[1])) : null
+  const loggedInEmail = payload?.sub || ""
+
+  useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        const [userTenantRes, departmentRes, contractsRes] = await Promise.all([
+          axios.get("http://localhost:8081/api/v1/tenant/user-tenant", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get("http://localhost:8081/api/v1/tenant/department", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get("http://localhost:8081/api/v1/tenant/contracts", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ])
+
+        const allUserTenants: Employee[] = userTenantRes.data
+        const allContracts: Contract[] = contractsRes.data
+
+        // Filtro user-tenant-in e kyçur
+        const visibleUserTenants = allUserTenants.filter(
+          (e) => e.user.email !== loggedInEmail
+        )
+
+        const contractMap = new Map<number, Contract>()
+        allContracts.forEach((c) => {
+          contractMap.set(c.userTenant.userTenantId, c)
+        })
+
+        const enriched = visibleUserTenants.map((e) => {
+          const contract = contractMap.get(e.userTenantId)
+          return {
+            ...e,
+            departmentName: contract?.position?.department?.name ?? "-",
+            positionTitle: contract?.position?.title ?? "-",
+          }
+        })
+
+        setEmployees(enriched)
+        setDepartments(departmentRes.data)
+      } catch (err) {
+        toast.error("Failed to load data")
+      }
+    }
+
+    fetchAllData()
+  }, [token])
+
+  const filteredEmployees = employees.filter((e) => {
+    const fullName = `${e.firstName} ${e.lastName}`.toLowerCase()
     const matchesSearch =
-      employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      employee.position.toLowerCase().includes(searchTerm.toLowerCase())
-
+      fullName.includes(searchTerm.toLowerCase()) ||
+      e.user.email.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesDepartment =
-      departmentFilter === "all" || employee.department.toLowerCase() === departmentFilter.toLowerCase()
-    const matchesStatus = statusFilter === "all" || employee.status === statusFilter
-
-    return matchesSearch && matchesDepartment && matchesStatus
+      departmentFilter === "all" ||
+      e.departmentName?.toLowerCase() === departmentFilter.toLowerCase()
+    return matchesSearch && matchesDepartment
   })
+
+  const handleDelete = async (id: number) => {
+    try {
+      await axios.delete(`http://localhost:8081/api/v1/tenant/user-tenant/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setEmployees((prev) => prev.filter((e) => e.userTenantId !== id))
+      toast.success("Employee deleted")
+    } catch (err) {
+      toast.error("Failed to delete employee")
+    }
+  }
 
   return (
     <Card>
@@ -108,94 +151,48 @@ export function EmployeesTable() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Departments</SelectItem>
-                <SelectItem value="engineering">Engineering</SelectItem>
-                <SelectItem value="design">Design</SelectItem>
-                <SelectItem value="marketing">Marketing</SelectItem>
-                <SelectItem value="hr">HR</SelectItem>
-                <SelectItem value="finance">Finance</SelectItem>
-                <SelectItem value="sales">Sales</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="on-leave">On Leave</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                {departments.map((d) => (
+                  <SelectItem key={d.departmentId} value={d.name}>
+                    {d.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
         </div>
+
         <div className="mt-6 rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[80px]">ID</TableHead>
-                <TableHead>
-                  <div className="flex items-center">
-                    Employee
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                  </div>
-                </TableHead>
+                <TableHead>Employee</TableHead>
                 <TableHead>Department</TableHead>
                 <TableHead>Position</TableHead>
                 <TableHead>Join Date</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredEmployees.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     No employees found.
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredEmployees.map((employee) => (
-                  <TableRow key={employee.id}>
-                    <TableCell className="font-medium">{employee.id}</TableCell>
+                filteredEmployees.map((e, i) => (
+                  <TableRow key={e.userTenantId}>
+                    <TableCell className="font-medium">{`EMP-${String(i + 1).padStart(3, "0")}`}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={`/placeholder.svg?height=32&width=32`} alt={employee.name} />
-                          <AvatarFallback className="bg-hr-dark-blue text-hr-lightest-gray text-xs">
-                            {employee.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{employee.name}</span>
-                          <span className="text-xs text-muted-foreground">{employee.email}</span>
-                        </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{`${e.firstName} ${e.lastName}`}</span>
+                        <span className="text-xs text-muted-foreground">{e.user.email}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{employee.department}</TableCell>
-                    <TableCell>{employee.position}</TableCell>
-                    <TableCell>{employee.joinDate}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={employee.status === "active" ? "default" : "outline"}
-                        className={
-                          employee.status === "active"
-                            ? "bg-green-500"
-                            : employee.status === "on-leave"
-                              ? "border-yellow-500 text-yellow-500"
-                              : "border-red-500 text-red-500"
-                        }
-                      >
-                        {employee.status === "active"
-                          ? "Active"
-                          : employee.status === "on-leave"
-                            ? "On Leave"
-                            : "Inactive"}
-                      </Badge>
-                    </TableCell>
+                    <TableCell>{e.departmentName}</TableCell>
+                    <TableCell>{e.positionTitle}</TableCell>
+                    <TableCell>{new Date(e.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -205,19 +202,8 @@ export function EmployeesTable() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={`/dashboard/employees/${employee.id}`}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              <span>View Details</span>
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/dashboard/employees/${employee.id}/edit`}>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              <span>Edit</span>
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                        
+                          <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(e.userTenantId)}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             <span>Delete</span>
                           </DropdownMenuItem>
@@ -230,7 +216,10 @@ export function EmployeesTable() {
             </TableBody>
           </Table>
         </div>
+        
       </CardContent>
+      <ToastContainer />
     </Card>
+    
   )
 }
