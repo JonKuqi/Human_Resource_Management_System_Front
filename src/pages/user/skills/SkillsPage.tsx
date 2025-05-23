@@ -104,7 +104,7 @@ export default function SkillsManagement() {
   async function fetchUserSkills() {
     try {
       const response = await axios.get<UserSkill[]>(
-        `http://localhost:8081/api/v1/public/user-skills/filter?userGeneral.userGeneralId=${userGeneralId}`,
+        `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-skills/filter?userGeneral.userGeneralId=${userGeneralId}`,
         axiosConfig
       );
       setSkills(response.data);
@@ -122,7 +122,7 @@ export default function SkillsManagement() {
     if (query.length > 2) {
       try {
         const response = await axios.get<SkillDto[]>(
-          `http://localhost:8081/api/v1/public/skill/search?q=${encodeURIComponent(query)}`,
+          `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/skill/search?q=${encodeURIComponent(query)}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setSearchResults(response.data);
@@ -169,7 +169,7 @@ export default function SkillsManagement() {
     try {
       let skillId: number | null = null;
       const searchRes = await axios.get<SkillDto[]>(
-        `http://localhost:8081/api/v1/public/skill/search?q=${encodeURIComponent(skillForm.name)}`,
+        `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/skill/search?q=${encodeURIComponent(skillForm.name)}`,
         axiosConfig
       );
       const existingSkill = searchRes.data.find(
@@ -180,7 +180,7 @@ export default function SkillsManagement() {
         skillId = existingSkill.skillId;
       } else {
         const createSkillRes = await axios.post(
-          `http://localhost:8081/api/v1/public/skill`,
+          `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/skill`,
           { name: skillForm.name, type: skillForm.type },
           axiosConfig
         );
@@ -190,7 +190,7 @@ export default function SkillsManagement() {
       if (!skillId) throw new Error("Failed to get skillId");
 
       await axios.post(
-        `http://localhost:8081/api/v1/public/user-skills`,
+        `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-skills`,
         {
           skill: { skillId },
           value: skillForm.value,
@@ -214,7 +214,7 @@ export default function SkillsManagement() {
     try {
       // Kontrollo në backend nëse ekziston rekord tjetër me këtë userGeneralId + skillId
       const checkRes = await axios.get<UserSkill[]>(
-       ` http://localhost:8081/api/v1/public/user-skills/filter?userGeneral.userGeneralId=${userGeneralId}&skill.skillId=${skillForm.skillId}`,
+       ` http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-skills/filter?userGeneral.userGeneralId=${userGeneralId}&skill.skillId=${skillForm.skillId}`,
         axiosConfig
       );
   
@@ -224,7 +224,7 @@ export default function SkillsManagement() {
       );
   
      await axios.put(
-  `http://localhost:8081/api/v1/public/user-skills/${selectedSkill.userSkillsId}`,
+  `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-skills/${selectedSkill.userSkillsId}`,
  {
           skill: { skillId: skillForm.skillId },
           value: skillForm.value,
@@ -244,7 +244,7 @@ export default function SkillsManagement() {
 
   const handleDeleteSkill = async (id: number) => {
     try {
-      await axios.delete(`http://localhost:8081/api/v1/public/user-skills/${id}`, axiosConfig);
+      await axios.delete(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-skills/${id}`, axiosConfig);
       await fetchUserSkills();
     } catch (error) {
       console.error("Failed to delete skill", error);

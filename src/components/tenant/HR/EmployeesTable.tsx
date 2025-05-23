@@ -66,13 +66,13 @@ export function EmployeesTable() {
     const fetchAllData = async () => {
       try {
         const [userTenantRes, departmentRes, contractsRes] = await Promise.all([
-          axios.get("http://localhost:8081/api/v1/tenant/user-tenant", {
+          axios.get("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/user-tenant", {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get("http://localhost:8081/api/v1/tenant/department", {
+          axios.get("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/department", {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get("http://localhost:8081/api/v1/tenant/contracts", {
+          axios.get("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/contracts", {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ])
@@ -122,7 +122,7 @@ export function EmployeesTable() {
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(`http://localhost:8081/api/v1/tenant/user-tenant/${id}`, {
+      await axios.delete(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/user-tenant/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       setEmployees((prev) => prev.filter((e) => e.userTenantId !== id))

@@ -57,7 +57,7 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
   const fetchApplicants = async () => {
     try {
       const token = localStorage.getItem("token") || ""
-      let url = `http://localhost:8081/api/v1/tenant/application/filter?jobListing.jobListingId=${jobId}`
+      let url = `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/application/filter?jobListing.jobListingId=${jobId}`
 
       // If there are CV keywords to filter by
       if (keywordFilter.trim() !== "") {
@@ -65,7 +65,7 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
           .split(",")
           .map(k => `cvKeywords=${encodeURIComponent(k.trim())}`)
           .join("&")
-        url = `http://localhost:8081/api/v1/tenant/application?${keywordParams}`
+        url = `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/application?${keywordParams}`
       }
 
       const response = await fetch(url, {

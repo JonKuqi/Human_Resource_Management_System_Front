@@ -94,7 +94,7 @@ export function EmployeeForm({ onSuccess }: { onSuccess?: () => void }) {
   })
 
   const API = axios.create({
-    baseURL: "http://localhost:8081/api/v1",
+    baseURL: "http://humanresourcemanagementsystemback-production.up.railway.app/api/v1",
     withCredentials: true,
   })
 
@@ -119,7 +119,7 @@ export function EmployeeForm({ onSuccess }: { onSuccess?: () => void }) {
 async function onSubmit(values: z.infer<typeof formSchema>) {
   try {
       const API = axios.create({
-    baseURL: "http://localhost:8081/api/v1",
+    baseURL: "http://humanresourcemanagementsystemback-production.up.railway.app/api/v1",
     withCredentials: true,
   })
 

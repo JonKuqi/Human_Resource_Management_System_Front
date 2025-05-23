@@ -24,7 +24,7 @@ interface Notification {
 }
 
 const API = axios.create({
-  baseURL: "http://localhost:8081/api/v1",
+  baseURL: "http://humanresourcemanagementsystemback-production.up.railway.app/api/v1",
   withCredentials: true,
 });
 API.interceptors.request.use((cfg) => {

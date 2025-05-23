@@ -46,7 +46,7 @@ export function JobListingsTable() {
   try {
     const token = localStorage.getItem("token") || "";
 
-    const res = await fetch(`http://localhost:8081/api/v1/public/job-listing/${jobId}`, {
+    const res = await fetch(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/job-listing/${jobId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -73,7 +73,7 @@ export function JobListingsTable() {
         const decoded = jwtDecode<DecodedToken>(token)
         console.log("Decoded token:", decoded)
         const schema = decoded.tenant
-        const tenantResponse = await fetch(`http://localhost:8081/api/v1/public/tenant/filter?schemaName=${schema}`, {
+        const tenantResponse = await fetch(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/tenant/filter?schemaName=${schema}`, {
   headers: {
     Authorization: `Bearer ${token}`
   }
@@ -87,7 +87,7 @@ const tenantId = tenantData[0].tenantId
 
         console.log("Decoded id:", tenantId)
 
-        const res = await fetch(`http://localhost:8081/api/v1/public/job-listing/filter?tenant.id=${tenantId}`, {
+        const res = await fetch(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/job-listing/filter?tenant.id=${tenantId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

@@ -69,7 +69,7 @@ export function PerformanceEvaluationForm() {
         const usertenant = decoded.userTenantId
 
         
-        const res = await fetch("http://localhost:8081/api/v1/tenant/user-tenant", {
+        const res = await fetch("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/user-tenant", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -127,7 +127,7 @@ async function onSubmit(values: z.infer<typeof formSchema>) {
   
 
   try {
-    const response = await fetch("http://localhost:8081/api/v1/tenant/evaluation-forms", {
+    const response = await fetch("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/evaluation-forms", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

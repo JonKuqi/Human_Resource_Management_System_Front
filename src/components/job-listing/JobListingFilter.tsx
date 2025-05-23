@@ -41,7 +41,7 @@ const JobListingFilter: React.FC<JobListingFilterProps> = ({
     const fetchIndustries = async () => {
       setLoadingIndustries(true)
       try {
-        const response = await fetch("http://localhost:8081/api/v1/public/industry")
+        const response = await fetch("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/industry")
 
         if (!response.ok) {
           throw new Error(`Error: ${response.status}`)

@@ -68,7 +68,7 @@ export default function LeaveRequestPage() {
     setIsLoading(true)
     try {
       if (!token || !userTenantId) throw new Error("Authentication token not found")
-      const response = await axios.get(`http://localhost:8081/api/v1/tenant/leave-request/filter?userTenant.userTenantId=${userTenantId}`, {
+      const response = await axios.get(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/leave-request/filter?userTenant.userTenantId=${userTenantId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setLeaveRequests(response.data)
