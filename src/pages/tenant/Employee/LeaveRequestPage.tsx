@@ -20,14 +20,27 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface LeaveRequest {
-  leave_request_id: number
-  user_tenant_id: number
-  leave_text: string
-  start_date: string
-  end_date: string
+  leaveRequestId: number
+  userTenant: { userTenantId: number }
+  leaveText: string
+  startDate: string
+  endDate: string
   status: "PENDING" | "APPROVED" | "REJECTED"
   reason: string
-  created_at: string
+  createdAt: string
+}
+
+interface DecodedToken {
+  role: string
+  user_tenant_id: number
+}
+
+function parseJwt(token: string): DecodedToken | null {
+  try {
+    return JSON.parse(atob(token.split('.')[1]))
+  } catch (e) {
+    return null
+  }
 }
 
 export default function LeaveRequestPage() {
@@ -41,6 +54,10 @@ export default function LeaveRequestPage() {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
+  const token = localStorage.getItem("token")
+  const payload = token ? parseJwt(token) : null
+  const userTenantId = payload?.user_tenant_id
+
   useEffect(() => {
     if (activeTab === "history") {
       fetchLeaveRequests()
@@ -50,52 +67,11 @@ export default function LeaveRequestPage() {
   const fetchLeaveRequests = async () => {
     setIsLoading(true)
     try {
-      const token = localStorage.getItem("token")
-      
-      if (!token) {
-        throw new Error("Authentication token not found")
-      }
-      
-      // In a real app, you would fetch leave requests from your API
-      // const response = await axios.get("http://localhost:8081/api/v1/tenant/leave-request/employee", {
-      //   headers: { Authorization: `Bearer ${token}` }
-      // })
-      
-      // Mock leave requests for demonstration
-      const mockLeaveRequests: LeaveRequest[] = [
-        {
-          leave_request_id: 1,
-          user_tenant_id: 1,
-          leave_text: "Annual Leave",
-          start_date: "2025-06-10",
-          end_date: "2025-06-15",
-          status: "APPROVED",
-          reason: "Family vacation",
-          created_at: "2025-05-20T10:30:00Z"
-        },
-        {
-          leave_request_id: 2,
-          user_tenant_id: 1,
-          leave_text: "Sick Leave",
-          start_date: "2025-05-05",
-          end_date: "2025-05-06",
-          status: "APPROVED",
-          reason: "Not feeling well",
-          created_at: "2025-05-04T08:15:00Z"
-        },
-        {
-          leave_request_id: 3,
-          user_tenant_id: 1,
-          leave_text: "Personal Leave",
-          start_date: "2025-07-01",
-          end_date: "2025-07-02",
-          status: "PENDING",
-          reason: "Personal matters to attend to",
-          created_at: "2025-05-25T14:20:00Z"
-        }
-      ]
-      
-      setLeaveRequests(mockLeaveRequests)
+      if (!token || !userTenantId) throw new Error("Authentication token not found")
+      const response = await axios.get(`http://localhost:8081/api/v1/tenant/leave-request/filter?userTenant.userTenantId=${userTenantId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setLeaveRequests(response.data)
     } catch (error) {
       console.error("Error fetching leave requests:", error)
       toast.error("Failed to load leave request history")
@@ -104,66 +80,47 @@ export default function LeaveRequestPage() {
     }
   }
 
-  // Calculate the number of days between start and end dates
   const calculateDays = () => {
     if (!startDate || !endDate) return null
-    
     const diffTime = Math.abs(endDate.getTime() - startDate.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1 // Include both start and end days
-    return diffDays
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1
   }
 
   const days = calculateDays()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!leaveText || !startDate || !endDate || !reason) {
+    if (!leaveText || !startDate || !endDate || !reason || !userTenantId) {
       toast.error("Please fill in all required fields")
       return
     }
-    
     if (startDate > endDate) {
       toast.error("End date cannot be before start date")
       return
     }
-    
+
     setIsSubmitting(true)
-    
     try {
-      const token = localStorage.getItem("token")
-      
-      if (!token) {
-        throw new Error("Authentication token not found")
-      }
-      
       const leaveRequest = {
-        leave_text: leaveText,
-        start_date: startDate.toISOString().split('T')[0],
-        end_date: endDate.toISOString().split('T')[0],
+        leaveText: leaveText,
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
         reason: reason,
-        status: "PENDING"
+        status: "PENDING",
+        userTenant: {
+          userTenantId: userTenantId
+        }
       }
-      
-      // In a real app, you would submit the leave request to your API
-      // await axios.post("http://localhost:8081/api/v1/tenant/leave-request", leaveRequest, {
-      //   headers: {
-      //     Authorization: `Bearer ${token}`
-      //   }
-      // })
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+
+      await axios.post("http://localhost:8081/api/v1/tenant/leave-request/", leaveRequest, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
       toast.success("Leave request submitted successfully")
-      
-      // Reset form
       setLeaveText("")
       setStartDate(undefined)
       setEndDate(undefined)
       setReason("")
-      
-      // Switch to history tab and refresh
       setActiveTab("history")
     } catch (error) {
       console.error("Error submitting leave request:", error)
@@ -174,43 +131,32 @@ export default function LeaveRequestPage() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
+    const date = new Date(dateString)
+    return isNaN(date.getTime()) ? "Invalid Date" : date.toLocaleDateString()
   }
 
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
-      case "pending":
-        return <Badge className="bg-yellow-500 capitalize">Pending</Badge>
-      case "approved":
-        return <Badge className="bg-green-500 capitalize">Approved</Badge>
-      case "rejected":
-        return (
-          <Badge variant="outline" className="text-red-500 border-red-500 capitalize">
-            Rejected
-          </Badge>
-        )
-      default:
-        return <Badge className="capitalize">{status}</Badge>
+      case "pending": return <Badge className="bg-yellow-500 capitalize">Pending</Badge>
+      case "approved": return <Badge className="bg-green-500 capitalize">Approved</Badge>
+      case "rejected": return <Badge variant="outline" className="text-red-500 border-red-500 capitalize">Rejected</Badge>
+      default: return <Badge className="capitalize">{status}</Badge>
     }
   }
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-employee-darker-blue mb-6">Leave Requests</h1>
-      
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-6">
           <TabsTrigger value="new">New Request</TabsTrigger>
           <TabsTrigger value="history">Request History</TabsTrigger>
         </TabsList>
-        
         <TabsContent value="new">
           <Card>
             <CardHeader>
               <CardTitle>New Leave Request</CardTitle>
-              <CardDescription>
-                Fill out the form below to submit a new leave request. All fields are required.
-              </CardDescription>
+              <CardDescription>Fill out the form below to submit a new leave request. All fields are required.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -230,17 +176,12 @@ export default function LeaveRequestPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="start-date">Start Date</Label>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
-                          id="start-date"
-                        >
+                        <Button variant="outline" className="w-full justify-start text-left font-normal" id="start-date">
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {startDate ? format(startDate, "PPP") : "Select date"}
                         </Button>
@@ -256,16 +197,11 @@ export default function LeaveRequestPage() {
                       </PopoverContent>
                     </Popover>
                   </div>
-                  
                   <div className="space-y-2">
                     <Label htmlFor="end-date">End Date</Label>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
-                          id="end-date"
-                        >
+                        <Button variant="outline" className="w-full justify-start text-left font-normal" id="end-date">
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {endDate ? format(endDate, "PPP") : "Select date"}
                         </Button>
@@ -282,7 +218,6 @@ export default function LeaveRequestPage() {
                     </Popover>
                   </div>
                 </div>
-                
                 {days && (
                   <div className="flex items-center p-4 bg-muted rounded-md">
                     <Clock className="h-5 w-5 mr-2 text-muted-foreground" />
@@ -291,7 +226,6 @@ export default function LeaveRequestPage() {
                     </span>
                   </div>
                 )}
-                
                 <div className="space-y-2">
                   <Label htmlFor="reason">Reason for Leave</Label>
                   <Textarea
@@ -303,23 +237,17 @@ export default function LeaveRequestPage() {
                     required
                   />
                 </div>
+                <div className="flex justify-end">
+                  <Button className="bg-dark-blue-gray hover:bg-dark-blue-hover text-white"type="submit" disabled={isSubmitting || !leaveText || !startDate || !endDate || !reason}>
+                    {isSubmitting ? "Submitting..." : "Submit Request"}
+                  </Button>
+                </div>
               </form>
             </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={() => navigate("/tenant/employee/dashboard")}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSubmit} 
-                disabled={isSubmitting || !leaveText || !startDate || !endDate || !reason}
-              >
-                {isSubmitting ? "Submitting..." : "Submit Request"}
-              </Button>
-            </CardFooter>
           </Card>
         </TabsContent>
         
-        <TabsContent value="history">
+       <TabsContent value="history">
           <Card>
             <CardHeader>
               <CardTitle>Leave Request History</CardTitle>
@@ -355,16 +283,16 @@ export default function LeaveRequestPage() {
                     </TableHeader>
                     <TableBody>
                       {leaveRequests.map((request) => (
-                        <TableRow key={request.leave_request_id}>
-                          <TableCell className="font-medium">{request.leave_request_id}</TableCell>
-                          <TableCell>{request.leave_text}</TableCell>
-                          <TableCell>{formatDate(request.start_date)}</TableCell>
-                          <TableCell>{formatDate(request.end_date)}</TableCell>
+                        <TableRow key={request.leaveRequestId}>
+                          <TableCell className="font-medium">{request.leaveRequestId}</TableCell>
+                          <TableCell>{request.leaveText}</TableCell>
+                          <TableCell>{formatDate(request.startDate)}</TableCell>
+                          <TableCell>{formatDate(request.endDate)}</TableCell>
                           <TableCell className="max-w-[200px] truncate" title={request.reason}>
                             {request.reason}
                           </TableCell>
                           <TableCell>{getStatusBadge(request.status)}</TableCell>
-                          <TableCell>{formatDate(request.created_at)}</TableCell>
+                          <TableCell>{formatDate(request.createdAt)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

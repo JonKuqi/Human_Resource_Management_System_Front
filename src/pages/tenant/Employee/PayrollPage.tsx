@@ -15,188 +15,140 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "react-toastify"
 
 interface PayrollRecord {
-  id: string
-  period: string
-  payDate: string
-  grossAmount: number
-  netAmount: number
-  taxAmount: number
-  deductions: {
-    type: string
-    amount: number
-  }[]
-  documentUrl?: string
+  payrollId: number
+  payPeriodStart: string
+  payPeriodEnd: string
+  baseSalary: number
+  bonuses: number
+  deductions: number
+  netPay: number
+  paymentDate: string
+  createdAt: string
+}
+
+interface DecodedToken {
+  user_tenant_id: number
+  role: string
+}
+
+function parseJwt(token: string): DecodedToken | null {
+  try {
+    return JSON.parse(atob(token.split('.')[1]))
+  } catch (e) {
+    return null
+  }
 }
 
 export default function PayrollPage() {
   const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([])
-  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
-  const [searchTerm, setSearchTerm] = useState("")
   const [selectedRecord, setSelectedRecord] = useState<PayrollRecord | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString())
   const [years, setYears] = useState<string[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
 
-  // Mock data for demonstration
   useEffect(() => {
-    // Generate mock payroll records
-    const currentYear = new Date().getFullYear()
-    const mockYears = [currentYear.toString(), (currentYear - 1).toString()]
-    setYears(mockYears)
-    
-    const generateMockPayroll = (year: string) => {
-      const records: PayrollRecord[] = []
-      
-      // Generate monthly records for the selected year
-      for (let month = 1; month <= 12; month++) {
-        // Only generate records up to the current month for the current year
-        if (year === currentYear.toString() && month > new Date().getMonth() + 1) {
-          continue
+    const fetchPayroll = async () => {
+      try {
+        const token = localStorage.getItem("token")
+        const payload = token ? parseJwt(token) : null
+        const userTenantId = payload?.user_tenant_id
+
+        if (!token || !userTenantId) {
+          throw new Error("Authentication token not found")
         }
-        
-        const grossAmount = 5000 + Math.random() * 1000
-        const taxAmount = grossAmount * 0.2
-        const insuranceAmount = 250
-        const pensionAmount = grossAmount * 0.05
-        const netAmount = grossAmount - taxAmount - insuranceAmount - pensionAmount
-        
-        records.push({
-          id: `${year}-${month.toString().padStart(2, "0")}`,
-          period: `${month.toString().padStart(2, "0")}/${year}`,
-          payDate: `${year}-${month.toString().padStart(2, "0")}-15`,
-          grossAmount,
-          netAmount,
-          taxAmount,
-          deductions: [
-            { type: "Income Tax", amount: taxAmount },
-            { type: "Health Insurance", amount: insuranceAmount },
-            { type: "Pension Contribution", amount: pensionAmount },
-          ],
-          documentUrl: "#",
+
+        const response = await axios.get(`http://localhost:8081/api/v1/tenant/payroll/filter?userTenant.userTenantId=${userTenantId}`, {
+          headers: { Authorization: `Bearer ${token}` }
         })
+
+        const allRecords = response.data
+        setPayrollRecords(allRecords)
+        const yearsAvailable = Array.from(new Set(allRecords.map((r: PayrollRecord) => new Date(r.payPeriodStart).getFullYear().toString())))
+        setYears(yearsAvailable.sort((a, b) => parseInt(b) - parseInt(a)))
+        setSelectedYear(yearsAvailable[0])
+      } catch (error) {
+        console.error("Error fetching payroll records:", error)
+        toast.error("Failed to load payroll records")
+      } finally {
+        setLoading(false)
       }
-      
-      return records
     }
-    
-    // Filter records based on selected year
-    const filteredRecords = generateMockPayroll(selectedYear)
-    setPayrollRecords(filteredRecords)
-  }, [selectedYear])
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount)
-  }
+    fetchPayroll()
+  }, [])
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
-  }
+  const formatCurrency = (amount: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString()
+  const handleDownloadPayslip = (record: PayrollRecord) => toast.info(`Downloading payslip for ${record.payPeriodStart} - ${record.payPeriodEnd}...`)
+  const handleViewDetails = (record: PayrollRecord) => setSelectedRecord(record)
 
-  const handleDownloadPayslip = (record: PayrollRecord) => {
-    // In a real app, this would download the actual document
-    toast.info(`Downloading payslip for ${record.period}...`)
-  }
-
-  const handleViewDetails = (record: PayrollRecord) => {
-    setSelectedRecord(record)
-  }
-
-  // Filter records based on search term
   const filteredRecords = payrollRecords.filter((record) =>
-    record.period.toLowerCase().includes(searchTerm.toLowerCase())
+    new Date(record.payPeriodStart).getFullYear().toString() === selectedYear &&
+    record.payPeriodStart.includes(searchTerm)
   )
+
+  const totalGross = filteredRecords.reduce((sum, r) => sum + r.baseSalary + r.bonuses, 0)
+  const totalNet = filteredRecords.reduce((sum, r) => sum + r.netPay, 0)
+  const totalDeductions = filteredRecords.reduce((sum, r) => sum + r.deductions, 0)
 
   return (
     <div>
       <h1 className="text-3xl font-bold text-employee-darker-blue mb-6">Payroll History</h1>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Year to Date Earnings</CardTitle>
-            <CardDescription>Total earnings in {new Date().getFullYear()}</CardDescription>
+            <CardDescription>Total gross pay in {selectedYear}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
-              {formatCurrency(
-                payrollRecords.reduce((sum, record) => sum + record.grossAmount, 0)
-              )}
-            </div>
+            <div className="text-3xl font-bold">{formatCurrency(totalGross)}</div>
           </CardContent>
         </Card>
-        
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Year to Date Taxes</CardTitle>
-            <CardDescription>Total taxes paid in {new Date().getFullYear()}</CardDescription>
+            <CardTitle className="text-lg">Year to Date Net Pay</CardTitle>
+            <CardDescription>Total net income received</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
-              {formatCurrency(
-                payrollRecords.reduce((sum, record) => sum + record.taxAmount, 0)
-              )}
-            </div>
+            <div className="text-3xl font-bold">{formatCurrency(totalNet)}</div>
           </CardContent>
         </Card>
-        
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Latest Payslip</CardTitle>
-            <CardDescription>
-              {payrollRecords.length > 0
-                ? `Period: ${payrollRecords[0].period}`
-                : "No payslips available"}
-            </CardDescription>
+            <CardTitle className="text-lg">Year to Date Deductions</CardTitle>
+            <CardDescription>Total deducted amount</CardDescription>
           </CardHeader>
           <CardContent>
-            {payrollRecords.length > 0 && (
-              <div className="flex justify-between items-center">
-                <div className="text-3xl font-bold">
-                  {formatCurrency(payrollRecords[0].netAmount)}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDownloadPayslip(payrollRecords[0])}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
-              </div>
-            )}
+            <div className="text-3xl font-bold">{formatCurrency(totalDeductions)}</div>
           </CardContent>
         </Card>
       </div>
-      
+
       <Card>
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <CardTitle>Payroll Records</CardTitle>
             <div className="flex flex-col md:flex-row gap-2">
               <div className="flex items-center space-x-2">
-                <Label htmlFor="year" className="sr-only">
-                  Year
-                </Label>
+                <Label htmlFor="year" className="sr-only">Year</Label>
                 <Select value={selectedYear} onValueChange={setSelectedYear}>
                   <SelectTrigger id="year" className="w-[120px]">
                     <SelectValue placeholder="Select year" />
                   </SelectTrigger>
                   <SelectContent>
                     {years.map((year) => (
-                      <SelectItem key={year} value={year}>
-                        {year}
-                      </SelectItem>
+                      <SelectItem key={year} value={year}>{year}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Search records..."
+                  placeholder="Search period..."
                   className="pl-8 w-full md:w-[200px]"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -209,150 +161,112 @@ export default function PayrollPage() {
           <Tabs defaultValue="table">
             <TabsList className="mb-4">
               <TabsTrigger value="table">Table View</TabsTrigger>
-              <TabsTrigger value="details" disabled={!selectedRecord}>
-                Payment Details
-              </TabsTrigger>
+              <TabsTrigger value="details" disabled={!selectedRecord}>Payment Details</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="table">
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>
-                        <div className="flex items-center">
-                          Period
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </div>
-                      </TableHead>
+                      <TableHead>Period</TableHead>
                       <TableHead>Pay Date</TableHead>
-                      <TableHead className="text-right">Gross Amount</TableHead>
-                      <TableHead className="text-right">Net Amount</TableHead>
+                      <TableHead className="text-right">Gross</TableHead>
+                      <TableHead className="text-right">Net</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredRecords.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
-                          No payroll records found.
+                    {filteredRecords.map((record) => (
+                      <TableRow key={record.payrollId}>
+                        <TableCell>{formatDate(record.payPeriodStart)} – {formatDate(record.payPeriodEnd)}</TableCell>
+                        <TableCell>{formatDate(record.paymentDate)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(record.baseSalary + record.bonuses)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(record.netPay)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => handleViewDetails(record)}>
+                              <FileText className="h-4 w-4 mr-2" /> Details
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDownloadPayslip(record)}>
+                              <Download className="h-4 w-4 mr-2" /> Download
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
-                    ) : (
-                      filteredRecords.map((record) => (
-                        <TableRow key={record.id}>
-                          <TableCell className="font-medium">
-                            <div className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                              {record.period}
-                            </div>
-                          </TableCell>
-                          <TableCell>{formatDate(record.payDate)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(record.grossAmount)}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(record.netAmount)}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleViewDetails(record)}
-                              >
-                                <FileText className="h-4 w-4 mr-2" />
-                                Details
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDownloadPayslip(record)}
-                              >
-                                <Download className="h-4 w-4 mr-2" />
-                                Download
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
+                    ))}
                   </TableBody>
                 </Table>
               </div>
             </TabsContent>
-            
-            <TabsContent value="details">
-              {selectedRecord && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-lg font-medium">Payment Details</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Period: {selectedRecord.period} • Paid on {formatDate(selectedRecord.payDate)}
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleDownloadPayslip(selectedRecord)}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download Payslip
-                    </Button>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-4">Earnings</h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span>Base Salary</span>
-                          <span className="font-medium">{formatCurrency(selectedRecord.grossAmount)}</span>
-                        </div>
-                        <Separator />
-                        <div className="flex justify-between font-bold">
-                          <span>Gross Pay</span>
-                          <span>{formatCurrency(selectedRecord.grossAmount)}</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm font-medium text-muted-foreground mb-4">Deductions</h4>
-                      <div className="space-y-2">
-                        {selectedRecord.deductions.map((deduction, index) => (
-                          <div key={index} className="flex justify-between">
-                            <span>{deduction.type}</span>
-                            <span className="font-medium">
-                              {formatCurrency(deduction.amount)}
-                            </span>
-                          </div>
-                        ))}
-                        <Separator />
-                        <div className="flex justify-between font-bold">
-                          <span>Total Deductions</span>
-                          <span>
-                            {formatCurrency(
-                              selectedRecord.deductions.reduce(
-                                (sum, deduction) => sum + deduction.amount,
-                                0
-                              )
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-muted p-4 rounded-md">
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-bold">Net Pay</span>
-                      <span className="text-2xl font-bold">
-                        {formatCurrency(selectedRecord.netAmount)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </TabsContent>
+
+
+<TabsContent value="details">
+  {selectedRecord && (
+    <div className="space-y-6">
+      <div className="flex justify-between items-start">
+        <div>
+          <h3 className="text-lg font-medium">Payment Details</h3>
+          <p className="text-sm text-muted-foreground">
+            Period: {formatDate(selectedRecord.payPeriodStart)} – {formatDate(selectedRecord.payPeriodEnd)} • Paid on {formatDate(selectedRecord.paymentDate)}
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => handleDownloadPayslip(selectedRecord)}>
+          <Download className="h-4 w-4 mr-2" /> Download Payslip
+        </Button>
+      </div>
+
+      <Separator />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h4 className="text-sm font-medium text-muted-foreground mb-4">Earnings</h4>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span>Base Salary</span>
+              <span className="font-medium">{formatCurrency(selectedRecord.baseSalary)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Bonuses</span>
+              <span className="font-medium">{formatCurrency(selectedRecord.bonuses)}</span>
+            </div>
+            <Separator />
+            <div className="flex justify-between font-bold">
+              <span>Total Gross</span>
+              <span>{formatCurrency(selectedRecord.baseSalary + selectedRecord.bonuses)}</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <h4 className="text-sm font-medium text-muted-foreground mb-4">Deductions</h4>
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span>Total Deductions</span>
+              <span className="font-medium">{formatCurrency(selectedRecord.deductions)}</span>
+            </div>
+            <Separator />
+            <div className="flex justify-between font-bold">
+              <span>Net Pay</span>
+              <span>{formatCurrency(selectedRecord.netPay)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="bg-muted p-4 rounded-md">
+        <p className="text-sm text-muted-foreground">
+          <strong>Paid via:</strong> Bank Transfer<br />
+          <strong>Transaction Reference:</strong> TRX-{selectedRecord.payrollId.toString().padStart(5, "0")}<br />
+          <strong>Issued:</strong> {formatDate(selectedRecord.createdAt)}
+        </p>
+      </div>
+    </div>
+  )}
+</TabsContent>
+
+
           </Tabs>
         </CardContent>
       </Card>
