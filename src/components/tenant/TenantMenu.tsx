@@ -23,6 +23,9 @@ import {
   Calendar,
   FileCheck,
   MessageSquare,
+  FileText,
+  Wallet,
+  Bell,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -38,14 +41,14 @@ const menuPages = [
     id: "leave-requests",
     name: "Leave Requests",
     path: "/tenant/leave-requests",
-    permission: "GET:/api/v1/tenant/leave-request",
+    permission: "PUT:/api/v1/tenant/leave-request",
     icon: <FaCalendarAlt />,
   },
   {
     id: "performance",
     name: "Performance",
     path: "/tenant/performance",
-    permission: "GET:/api/v1/tenant/evaluation-forms",
+    permission: "POST:/api/v1/tenant/evaluation-forms",
     icon: <FaChartLine />,
   },
   {
@@ -74,28 +77,28 @@ const menuPages = [
     id: "hr-employees",
     name: "Employees",
     path: "/tenant/employees",
-    permission: "GET:/api/v1/tenant/user-tenant",
+    permission: "POST:/api/v1/tenant/user-tenant",
     icon: <Users className="h-5 w-5" />,
   },
-  {
-    id: "hr-performance",
-    name: "HR Performance",
-    path: "/tenant/performance",
-    permission: "GET:/api/v1/tenant/evaluation-forms",
-    icon: <Star className="h-5 w-5" />,
-  },
-  {
-    id: "hr-leave-requests",
-    name: "HR Leave Requests",
-    path: "/tenant/leave-requests",
-    permission: "GET:/api/v1/tenant/leave-request/",
-    icon: <Calendar className="h-5 w-5" />,
-  },
+  // {
+  //   id: "hr-performance",
+  //   name: "HR Performance",
+  //   path: "/tenant/performance",
+  //   permission: "POST:/api/v1/tenant/evaluation-forms",
+  //   icon: <Star className="h-5 w-5" />,
+  // },
+  // {
+  //   id: "hr-leave-requests",
+  //   name: "HR Leave Requests",
+  //   path: "/tenant/leave-requests",
+  //   permission: "PUT:/api/v1/tenant/leave-request/",
+  //   icon: <Calendar className="h-5 w-5" />,
+  // },
   {
     id: "hr-contracts",
     name: "Contracts",
     path: "/tenant/contracts",
-    permission: "GET:/api/v1/tenant/contracts",
+    permission: "POST:/api/v1/tenant/contracts",
     icon: <FileCheck className="h-5 w-5" />,
   },
   {
@@ -108,6 +111,44 @@ const menuPages = [
     alwaysVisible: true,
 
   },
+  
+{
+  id: "employee-leave",
+  name: "Leave Requests",
+  path: "/tenant/employee/leave-request",
+  permission: "POST:/api/v1/tenant/leave-request",
+  icon: <Calendar className="h-5 w-5" />,
+},
+{
+  id: "employee-contract",
+  name: "My Contract",
+  path: "/tenant/employee/contract",
+  permission: "GET:/api/v1/tenant/contract",
+  icon: <FileText className="h-5 w-5" />,
+},
+{
+  id: "employee-evaluation",
+  name: "Evaluations",
+  path: "/tenant/employee/evaluation",
+  permission: "GET:/api/v1/tenant/evaluation-forms",
+  icon: <Star className="h-5 w-5" />,
+},
+{
+  id: "employee-payroll",
+  name: "Payroll History",
+  path: "/tenant/employee/payroll",
+  permission: "GET:/api/v1/tenant/payroll",
+  icon: <Wallet className="h-5 w-5" />,
+},
+{
+  id: "employee-notifications",
+  name: "Notifications",
+  path: "/tenant/employee/notifications",
+  permission: "GET:/api/v1/tenant/notifications",
+  icon: <Bell className="h-5 w-5" />,
+  hasBadge: true,
+},
+
 ];
 
 const TenantMenu = () => {
