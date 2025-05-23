@@ -191,49 +191,41 @@ const UserRoles = () => {
   };
 
   /* ---------------- actions ----------------*/
-const openPermissionsPanel = async (roleId: number) => {
-  setSelectedRoleId(roleId);
-  setSelectedUserId(null);
+  const openPermissionsPanel = async (roleId: number) => {
+    setSelectedRoleId(roleId);
+    setSelectedUserId(null);
+    try {
+      // expect RolePermission list
+      const res = await API.get<RolePermissionDTO[]>(
+        `/tenant/role-permission/by-role/${roleId}`
+      );
 
-  try {
-    const res = await API.get<RolePermissionDTO[]>(
-      `/tenant/role-permission/by-role/${roleId}`
-    );
-
-    const permissions = res.data ?? [];  // ← handle undefined/null safely
-
-    // convert to "verb:resource"
-    setSelectedPermissions(
-      permissions.map(
-        (rp) => `${rp.tenantPermission.verb}:${rp.tenantPermission.resource}`
-      )
-    );
-  } catch (e: any) {
-    // only show error if it's a real request failure, not just "empty"
-    if (e?.response?.status && e.response.status !== 200) {
+      // convert to "verb:resource"
+      setSelectedPermissions(
+        res.data.map(
+          (rp) => `${rp.tenantPermission.verb}:${rp.tenantPermission.resource}`
+        )
+      );
+    } catch (e) {
       console.error(e);
       setError("Unable to fetch role permissions.");
-    } else {
-      // fallback for unknown shape
-      setSelectedPermissions([]);
     }
-  }
-};
+  };
 
-  const openRolesDropdown = async (userTenantId: number) => {
-    setSelectedUserId(userTenantId);
-    setSelectedRoleId(null);
-    try {
-      const res = await API.get<AssignedRole[]>(`/tenant/user-role/filter?userTenantId=${userTenantId}`);
-      setSelectedUserRoles(res.data.map((r: any) => r.role?.roleName ?? r.roleName));
-    } catch (e: any) {
-      if (e.response?.status === 404) {
-        setSelectedUserRoles([]); // nuk ka role – por nuk është error
-      } else {
-        console.error(e);
-        setError("Unable to fetch user roles.");
-      }
-    }
+const openRolesDropdown = async (userTenantId: number) => {
+  setSelectedUserId(userTenantId);
+  setSelectedRoleId(null);
+try {
+  const res = await API.get<AssignedRole[]>(`/tenant/user-role/by-user-tenant/${userTenantId}`);
+  setSelectedUserRoles(res.data.map((r: any) => r.role?.roleName ?? r.roleName));
+} catch (e: any) {
+  if (e.response?.status === 404) {
+    setSelectedUserRoles([]); // nuk ka role – por nuk është error
+  } else {
+    console.error(e);
+    setError("Unable to fetch user roles.");
+  }
+}
 
   }
 

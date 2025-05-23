@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Link, useLocation } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext"
 import { User, Menu, X, LogOut } from "lucide-react"
 import {
@@ -21,12 +21,13 @@ const Navbar2 = () => {
   const pathname = location.pathname
 
   const isActive = (path: string) => pathname === path
-
+  const navigate = useNavigate();
+ 
   return (
     <nav style={{ backgroundColor: colors.primary, color: "white" }} className="sticky top-0 z-50 shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
-          <Link to="/" className="text-xl font-bold">
+          <Link to="/user" className="text-xl font-bold">
             <span style={{ color: "white" }}>Nex</span>
             <span style={{ color: colors.accent }}>HR</span>
           </Link>
@@ -82,10 +83,14 @@ const Navbar2 = () => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
+                <DropdownMenuItem
+  className="text-red-600"
+  onClick={() => navigate("/login")}
+>
+  <LogOut className="mr-2 h-4 w-4" />
+  <span>Logout</span>
+</DropdownMenuItem>
+
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -138,9 +143,13 @@ const Navbar2 = () => {
           >
             View Profile
           </Link>
-          <button className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-500 hover:opacity-80">
-            Logout
-          </button>
+          <button
+  onClick={() => navigate("/login")}
+  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-500 hover:opacity-80"
+>
+  Logout
+</button>
+
         </div>
       )}
     </nav>

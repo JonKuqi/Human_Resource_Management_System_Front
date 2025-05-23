@@ -7,6 +7,7 @@ import { CalendarIcon } from "lucide-react"
 import { format, addDays, differenceInBusinessDays } from "date-fns"
 import Link from "next/link"
 import { useEffect } from "react"
+import axios from "axios"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -41,7 +42,7 @@ const formSchema = z
     path: ["endDate"],
   })
 
-// Sample employees data
+// Sample employees data (mund ta zëvendësosh me API dinamik nëse ke)
 const employees = [
   { id: "EMP-001", name: "Alex Johnson" },
   { id: "EMP-002", name: "Sarah Williams" },
@@ -57,13 +58,14 @@ export function LeaveRequestForm() {
       startDate: new Date(),
       endDate: addDays(new Date(), 1),
       reason: "",
+      halfDay: "none",
     },
   })
 
   const startDate = form.watch("startDate")
   const endDate = form.watch("endDate")
 
-  // Calculate business days between dates
+  // Calculate business days between dates and adjust endDate if needed
   useEffect(() => {
     if (startDate && endDate) {
       const days = differenceInBusinessDays(endDate, startDate) + 1
@@ -73,10 +75,39 @@ export function LeaveRequestForm() {
     }
   }, [startDate, endDate, form])
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
-    // Here you would typically send the data to your API
-    alert("Leave request submitted successfully!")
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const payload = {
+        userTenant: {
+          userTenantId: parseInt(values.employeeId.replace("EMP-", ""), 10),
+        },
+        leaveType: values.leaveType,
+        startDate: values.startDate.toISOString().split("T")[0], // në format yyyy-MM-dd
+        endDate: values.endDate.toISOString().split("T")[0],
+        reason: values.reason,
+        halfDay: values.halfDay,
+      }
+
+      const res = await axios.post("http://localhost:8081/api/v1/tenant/leave-request/", payload)
+
+      // Kontrollo për përgjigje të suksesshme
+      if (res.status !== 200) {
+        throw new Error(res.data.message || "Failed to submit leave request")
+      }
+
+      alert("Leave request submitted successfully!")
+
+      // Pas dërgimit të suksesshëm, resetimi i formës
+      form.reset({
+        startDate: new Date(),
+        endDate: addDays(new Date(), 1),
+        reason: "",
+        halfDay: "none",
+      })
+      // Opsionale: rifresko listën e kërkesave në UI nëse ke
+    } catch (error) {
+      alert(`Error: ${(error as Error).message}`)
+    }
   }
 
   return (
@@ -94,7 +125,7 @@ export function LeaveRequestForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Employee</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select employee" />
@@ -119,19 +150,19 @@ export function LeaveRequestForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Leave Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select leave type" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="annual">Annual Leave</SelectItem>
-                      <SelectItem value="sick">Sick Leave</SelectItem>
-                      <SelectItem value="personal">Personal Leave</SelectItem>
-                      <SelectItem value="maternity">Maternity Leave</SelectItem>
-                      <SelectItem value="paternity">Paternity Leave</SelectItem>
-                      <SelectItem value="unpaid">Unpaid Leave</SelectItem>
+                      <SelectItem value="annual leave">Annual Leave</SelectItem>
+                      <SelectItem value="sick leave">Sick Leave</SelectItem>
+                      <SelectItem value="personal leave">Personal Leave</SelectItem>
+                      <SelectItem value="maternity leave">Maternity Leave</SelectItem>
+                      <SelectItem value="paternity leave">Paternity Leave</SelectItem>
+                      <SelectItem value="unpaid leave">Unpaid Leave</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -151,7 +182,9 @@ export function LeaveRequestForm() {
                         <FormControl>
                           <Button
                             variant={"outline"}
-                            className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
+                            className={`w-full pl-3 text-left font-normal ${
+                              !field.value && "text-muted-foreground"
+                            }`}
                           >
                             {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -184,7 +217,9 @@ export function LeaveRequestForm() {
                         <FormControl>
                           <Button
                             variant={"outline"}
-                            className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
+                            className={`w-full pl-3 text-left font-normal ${
+                              !field.value && "text-muted-foreground"
+                            }`}
                           >
                             {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -216,7 +251,7 @@ export function LeaveRequestForm() {
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                       className="flex flex-col space-y-1"
                     >
                       <FormItem className="flex items-center space-x-3 space-y-0">
