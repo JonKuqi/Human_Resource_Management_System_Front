@@ -6,6 +6,8 @@ import { useTheme } from "../../context/ThemeContext";
 import { FaCreditCard, FaCheck } from "react-icons/fa";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const plans = [
   {
@@ -57,6 +59,7 @@ const plans = [
 
 
 
+
 const SubscriptionPage = () => {
   const { colors } = useTheme();
   const router = useRouter(); 
@@ -65,29 +68,48 @@ const SubscriptionPage = () => {
   const [isBlocked, setIsBlocked] = useState(false);
   const [expiryDate, setExpiryDate] = useState<string | null>(null);
 
-  useEffect(() => {
-    const checkActiveSubscription = async () => {
-      const token = localStorage.getItem("token");
-      try {
-        const res = await fetch("http://localhost:8081/api/v1/tenant/subscriptions/active", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+useEffect(() => {
+  const checkActiveSubscription = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch("http://localhost:8081/api/v1/tenant/subscriptions/active", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-        if (res.ok) {
-          const data = await res.json();
-          if (data.active) {
-            setIsBlocked(true);
-            setExpiryDate(data.endsAt);
-            alert(`You already have an active subscription until ${data.endsAt}`);
-          }
+      if (res.ok) {
+        const data = await res.json();
+        if (data.active) {
+          setIsBlocked(true);
+          setExpiryDate(data.endsAt);
+          alert(`You already have an active subscription until ${data.endsAt}`);
         }
-      } catch (error) {
-        console.error("Error checking subscription:", error);
       }
-    };
+    } catch (error) {
+      console.error("Error checking subscription:", error);
+    }
+  };
 
-    checkActiveSubscription();
-  }, []);
+  
+
+  const loadPermissions = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const res = await fetch("http://localhost:8081/api/v1/tenant/user-role/permissions", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const permissions = await res.json();
+      localStorage.setItem("permissions", JSON.stringify(permissions));
+      window.dispatchEvent(new Event("storage")); 
+    } catch (err) {
+      console.error("Failed to fetch permissions", err);
+    }
+  };
+
+  checkActiveSubscription();
+  loadPermissions();
+}, []);
+
 
   const formik = useFormik({
     initialValues: { planId: "" },
@@ -128,7 +150,8 @@ const SubscriptionPage = () => {
         const data = await response.json();
 
         if (selectedPlan.name === "FREE" && data.message === "SUBSCRIPTION_ACTIVATED") {
-          alert("Subscription activated!");
+          //alert("Subscription activated!");
+          toast.success("Subscription activated!");
         } else if (data.approvalUrl) {
           router.push(data.approvalUrl); 
         } else {

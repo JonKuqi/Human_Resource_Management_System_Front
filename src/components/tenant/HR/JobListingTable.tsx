@@ -71,7 +71,21 @@ export function JobListingsTable() {
       try {
         const token = localStorage.getItem("token") || ""
         const decoded = jwtDecode<DecodedToken>(token)
-        const tenantId = decoded.tenantId
+        console.log("Decoded token:", decoded)
+        const schema = decoded.tenant
+        const tenantResponse = await fetch(`http://localhost:8081/api/v1/public/tenant/filter?schemaName=${schema}`, {
+  headers: {
+    Authorization: `Bearer ${token}`
+  }
+})
+
+const tenantData = await tenantResponse.json()
+console.log("tenantData: ",tenantData)
+const tenantId = tenantData[0].tenantId
+
+        console.log("Tenant id:", tenantId)
+
+        console.log("Decoded id:", tenantId)
 
         const res = await fetch(`http://localhost:8081/api/v1/public/job-listing/filter?tenant.id=${tenantId}`, {
           headers: {

@@ -11,6 +11,8 @@ import axios from "axios"
 import { jwtDecode } from "jwt-decode"
 import { useEffect } from "react"
 import { decode } from "punycode"
+import { usePermissions } from "../context/PermissionContext";
+
 
 interface DecodedToken {
   role: string;
@@ -27,6 +29,8 @@ const LoginSchema = Yup.object().shape({
 const LoginPage = () => {
   const { colors } = useTheme()
   const navigate = useNavigate()
+  const { setPermissions } = usePermissions();
+
 
   useEffect(() => {
     localStorage.removeItem("token")
@@ -49,7 +53,7 @@ const LoginPage = () => {
 
     if (role === "TENANT_USER") {
       const userRolesResponse = await axios.get(
-        `http://localhost:8081/api/v1/tenant/user-role/filter?userTenantId=/${userTenantId}`,
+        `http://localhost:8081/api/v1/tenant/user-role/filter?userTenant.id=${userTenantId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -57,11 +61,42 @@ const LoginPage = () => {
 
       const roles = userRolesResponse.data
       const roleName = roles[0]?.role?.roleName?.toLowerCase() || ""
+      const roleId = roles[0]?.role?.roleId;
+      if (!roleId) throw new Error("No role found for this user");
+
+      const rolePermRes = await axios.get(
+          `http://localhost:8081/api/v1/tenant/role-permission/filter?role.id=${roleId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+       const rolePerms = rolePermRes.data;
+      const permissionIds = rolePerms.map((rp: any) => rp.tenantPermission.tenantPermissionId);
+      //  Get all available permissions
+      const allPermRes = await axios.get(`http://localhost:8081/api/v1/public/permission`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const allPermissions = allPermRes.data;
+
+      // Match permissions by ID
+      const matchedPermissions = allPermissions.filter((perm: any) =>
+        permissionIds.includes(perm.tenantPermissionId)
+      );
+
+      const extractedPermissions = matchedPermissions.map(
+        (perm: any) => `${perm.verb}:${perm.resource}`
+      );
+      console.log("User permissions:", extractedPermissions)
+
+      // Save to context
+      setPermissions(extractedPermissions);
 
       if (roleName === "owner") {
         navigate("/tenant/dashboard")
       } else if (roleName === "hr") {
-        navigate("/tenant/hr/dashboard")
+        navigate("/tenant/dashboard")
       } else {
         navigate("/tenant")
       }
