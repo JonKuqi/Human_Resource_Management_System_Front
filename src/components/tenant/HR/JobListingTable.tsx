@@ -198,7 +198,7 @@ const tenantId = tenantData[0].tenantId
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem asChild>
                               {/* <Link href={`/tenant/HR/job/${job.jobListingId}`}> */}
-                              <Link to={`/tenant/hr/job-applicants/${job.jobListingId}`}>
+                              <Link to={`/tenant/job-applicants/${job.jobListingId}`}>
                                 <Eye className="mr-2 h-4 w-4" />
                                 View Applicants
                               </Link>

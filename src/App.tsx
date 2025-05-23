@@ -87,6 +87,7 @@ function App() {
             <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
             <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
             <Route path="/signup" element={<PublicLayout><SignupPage /></PublicLayout>} />
+            <Route path="/jobs" element={<PublicLayout><JoblistPage /></PublicLayout>} />
             <Route path="/verify-email" element={<PublicLayout><VerifyEmailPage /></PublicLayout>} />
             <Route path="/tenant/register" element={<PublicLayout><CompanyRegistrationPage /></PublicLayout>} />
             <Route path="/tenant/onboarding" element={<PublicLayout><OwnerOnboardingPage /></PublicLayout>} />
