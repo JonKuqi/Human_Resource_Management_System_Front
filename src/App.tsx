@@ -48,6 +48,17 @@ import PerformancePage from "./pages/tenant/HR/PerformancePage";
 import NewPerformanceEvaluationPage from "./pages/tenant/HR/NewPerformanceEvaluationPage";
 import ChatPage from "./pages/tenant/HR/ChatPage";
 
+
+// Employee
+import EmployeeContratsPage from "./pages/tenant/Employee/ContractPage";
+import EmployeeEvaluationPage from "./pages/tenant/Employee/EvalutationPage";
+import EmployeeLeaveRequestPage from "./pages/tenant/Employee/LeaveRequestPage";
+import EmployeePayrollPage from "./pages/tenant/Employee/PayrollPage";
+import EmployeeNotificationPage from "./pages/tenant/Employee/NotificationPage";
+
+
+
+
 const PublicLayout = ({ children }: { children: React.ReactNode }) => (
   <div className="flex flex-col min-h-screen">
     <Navbar />
@@ -110,6 +121,13 @@ function App() {
                       <Route path="performance" element={<PerformancePage />} />
                       <Route path="performance/new" element={<NewPerformanceEvaluationPage />} />
                       <Route path="chat" element={<ChatPage />} />
+
+                       {/* 🧑‍💼 EMPLOYEE ROUTES */}
+                      <Route path="employee/contract" element={<EmployeeContratsPage />} />
+                      <Route path="employee/evaluation" element={<EmployeeEvaluationPage />} />
+                      <Route path="employee/leave-request" element={<EmployeeLeaveRequestPage />} />
+                      <Route path="employee/payroll" element={<EmployeePayrollPage />} />
+                      <Route path="employee/notifications" element={<EmployeeNotificationPage />} />
                     </Routes>
                   </TenantLayout>
                 </PrivateRoute>
