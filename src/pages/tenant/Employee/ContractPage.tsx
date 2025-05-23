@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Download, FileText, Info } from 'lucide-react'
+import { Download, Info } from 'lucide-react'
 import axios from "axios"
 
 import { Button } from "@/components/ui/button"
@@ -11,18 +11,29 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "react-toastify"
 
 interface Contract {
-  contract_id: number
-  user_tenant_id: number
-  position_id: number
-  contract_type: string
-  start_date: string
-  end_date: string | null
+  contractId: number
+  userTenant: { userTenantId: number }
+  position: {
+    title: string
+  }
+  contractType: string
+  startDate: string
+  endDate: string | null
   salary: number
   terms: string
-  created_at: string
-  position?: {
-    title: string
-    department: string
+  createdAt: string
+}
+
+interface DecodedToken {
+  user_tenant_id: number
+  role: string
+}
+
+function parseJwt(token: string): DecodedToken | null {
+  try {
+    return JSON.parse(atob(token.split('.')[1]))
+  } catch (e) {
+    return null
   }
 }
 
@@ -37,46 +48,23 @@ export default function ContractPage() {
   const fetchContract = async () => {
     try {
       const token = localStorage.getItem("token")
-      
-      if (!token) {
+      const payload = token ? parseJwt(token) : null
+      const userTenantId = payload?.user_tenant_id
+
+      if (!token || !userTenantId) {
         throw new Error("Authentication token not found")
       }
-      
-      // In a real app, you would fetch contract from your API
-      // const response = await axios.get("http://localhost:8081/api/v1/tenant/contract/employee", {
-      //   headers: {
-      //     Authorization: `Bearer ${token}`
-      //   }
-      // })
-      
-      // Mock contract for demonstration
-      const mockContract: Contract = {
-        contract_id: 1,
-        user_tenant_id: 1,
-        position_id: 2,
-        contract_type: "Permanent",
-        start_date: "2023-01-15",
-        end_date: null,
-        salary: 75000,
-        terms: `
-          1. Working Hours: 40 hours per week, Monday to Friday, 9:00 AM to 5:00 PM.
-          2. Probation Period: 3 months from the start date.
-          3. Notice Period: 1 month written notice required for termination by either party.
-          4. Benefits:
-             - Health insurance
-             - 401(k) retirement plan with 4% employer match
-             - 20 days annual leave
-             - 10 days sick leave
-          5. Confidentiality: Employee agrees to maintain confidentiality of company information.
-        `,
-        created_at: "2023-01-10T10:30:00Z",
-        position: {
-          title: "Software Developer",
-          department: "Engineering"
-        }
+
+      const response = await axios.get(`http://localhost:8081/api/v1/tenant/contracts/filter?userTenant.userTenantId=${userTenantId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      const data = response.data
+      if (data && data.length > 0) {
+        setContract(data[0])
+      } else {
+        setContract(null)
       }
-      
-      setContract(mockContract)
     } catch (error) {
       console.error("Error fetching contract:", error)
       toast.error("Failed to load contract details")
@@ -86,7 +74,8 @@ export default function ContractPage() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
+    const date = new Date(dateString)
+    return isNaN(date.getTime()) ? "Invalid Date" : date.toLocaleDateString()
   }
 
   const formatCurrency = (amount: number) => {
@@ -98,10 +87,7 @@ export default function ContractPage() {
 
   const downloadContract = () => {
     if (!contract) return
-    
-    // In a real app, this would download the actual document
     toast.info("Downloading contract document...")
-    // window.open(contract.documentUrl, '_blank')
   }
 
   if (loading) {
@@ -145,13 +131,13 @@ export default function ContractPage() {
   return (
     <div className="max-w-3xl mx-auto">
       <h1 className="text-3xl font-bold text-employee-darker-blue mb-6">My Contract</h1>
-      
+
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-start justify-between">
             <div>
               <CardTitle className="text-2xl">Employment Contract</CardTitle>
-              <CardDescription>Contract ID: {contract.contract_id}</CardDescription>
+              <CardDescription>Contract ID: {contract.contractId}</CardDescription>
             </div>
             <Button variant="outline" onClick={downloadContract}>
               <Download className="mr-2 h-4 w-4" />
@@ -163,34 +149,30 @@ export default function ContractPage() {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-1">Position</h3>
-              <p className="text-lg font-medium">{contract.position?.title || "Software Developer"}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-1">Department</h3>
-              <p className="text-lg font-medium">{contract.position?.department || "Engineering"}</p>
+              <p className="text-lg font-medium">{contract.position?.title || "N/A"}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-1">Contract Type</h3>
-              <p className="text-lg font-medium">{contract.contract_type}</p>
+              <p className="text-lg font-medium">{contract.contractType}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-1">Start Date</h3>
-              <p className="text-lg font-medium">{formatDate(contract.start_date)}</p>
+              <p className="text-lg font-medium">{formatDate(contract.startDate)}</p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-1">End Date</h3>
               <p className="text-lg font-medium">
-                {contract.end_date ? formatDate(contract.end_date) : "Permanent"}
+                {contract.endDate ? formatDate(contract.endDate) : "Permanent"}
               </p>
             </div>
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-1">Created On</h3>
-              <p className="text-lg font-medium">{formatDate(contract.created_at)}</p>
+              <p className="text-lg font-medium">{formatDate(contract.createdAt)}</p>
             </div>
           </div>
-          
+
           <Separator />
-          
+
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Compensation</h3>
             <div className="bg-muted p-4 rounded-md">
@@ -200,20 +182,21 @@ export default function ContractPage() {
               </div>
             </div>
           </div>
-          
+
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Terms and Conditions</h3>
             <div className="bg-muted p-4 rounded-md">
               <pre className="whitespace-pre-wrap text-sm font-sans">{contract.terms}</pre>
             </div>
           </div>
-          
+
           <div className="bg-blue-50 p-4 rounded-md flex items-start">
             <Info className="h-5 w-5 text-blue-500 mr-2 mt-0.5" />
             <p className="text-sm text-blue-700">
               If you have any questions about your contract, please contact the HR department.
             </p>
           </div>
+
         </CardContent>
       </Card>
     </div>
