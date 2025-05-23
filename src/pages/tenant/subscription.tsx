@@ -72,7 +72,7 @@ useEffect(() => {
   const checkActiveSubscription = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/subscriptions/active", {
+      const res = await fetch("https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/subscriptions/active", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -95,7 +95,7 @@ useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const res = await fetch("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/user-role/permissions", {
+      const res = await fetch("https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/user-role/permissions", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const permissions = await res.json();
@@ -132,7 +132,7 @@ useEffect(() => {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          "http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/subscriptions/payments/create",
+          "https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/subscriptions/payments/create",
           {
             method: "POST",
             headers: {

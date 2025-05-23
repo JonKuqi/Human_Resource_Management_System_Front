@@ -71,7 +71,7 @@ export default function Profile() {
         const userGeneralId = decoded.user_general_id
         const userId = decoded.user_id
 
-        const response = await axios.get(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-general/${userGeneralId}`, {
+        const response = await axios.get(`https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-general/${userGeneralId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -153,7 +153,7 @@ const viewCvBlob = () => {
   verified: user?.verified ?? true  // ruajmë statusin ekzistues
 }
 
-      await axios.put(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-general/${userGeneralId}`, payload, {
+      await axios.put(`https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-general/${userGeneralId}`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

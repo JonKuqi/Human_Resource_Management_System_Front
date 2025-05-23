@@ -55,7 +55,7 @@ export default function ContractPage() {
         throw new Error("Authentication token not found")
       }
 
-      const response = await axios.get(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/contracts/filter?userTenant.userTenantId=${userTenantId}`, {
+      const response = await axios.get(`https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/contracts/filter?userTenant.userTenantId=${userTenantId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
 

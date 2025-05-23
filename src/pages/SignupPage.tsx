@@ -48,7 +48,7 @@ const SignupPage = () => {
     }
 
     try {
-      const response = await axios.post("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-general/register", payload, {
+      const response = await axios.post("https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-general/register", payload, {
         headers: {
           "Content-Type": "application/json"
         }

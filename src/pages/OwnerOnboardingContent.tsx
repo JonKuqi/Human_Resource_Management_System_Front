@@ -69,7 +69,7 @@ export default function OwnerOnboardingContent() {
             // Exclude confirmPassword before sending
             const { confirmPassword, ...dataToSend } = values
 
-            await axios.post("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/tenant/onboard", {
+            await axios.post("https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/tenant/onboard", {
                 ...dataToSend,
                 token,
             })

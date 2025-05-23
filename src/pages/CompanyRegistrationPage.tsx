@@ -38,7 +38,7 @@ const CompanyRegistrationPage = () => {
 
   const handleSubmit = async (values: any, { setSubmitting }: any) => {
     try {
-      const response = await axios.post("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/tenant/register", values, {
+      const response = await axios.post("https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/tenant/register", values, {
         headers: {
           "Content-Type": "application/json",
         },

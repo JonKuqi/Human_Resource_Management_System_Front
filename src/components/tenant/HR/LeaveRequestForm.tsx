@@ -88,7 +88,7 @@ export function LeaveRequestForm() {
         halfDay: values.halfDay,
       }
 
-      const res = await axios.post("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/leave-request/", payload)
+      const res = await axios.post("https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/leave-request/", payload)
 
       // Kontrollo për përgjigje të suksesshme
       if (res.status !== 200) {

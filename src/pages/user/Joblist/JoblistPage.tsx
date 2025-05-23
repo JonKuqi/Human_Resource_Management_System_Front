@@ -44,7 +44,7 @@ const JobListingPage: React.FC = () => {
       setError(null)
 
       try {
-        const response = await fetch("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/job-listing")
+        const response = await fetch("https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/job-listing")
 
         if (!response.ok) {
           throw new Error(`Error: ${response.status}`)

@@ -65,7 +65,7 @@ export function ContractsTable() {
       const token = localStorage.getItem("token")
       if (!token) throw new Error("Tokeni nuk ekziston!")
 
-      const response = await axios.get("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/contracts", {
+      const response = await axios.get("https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/contracts", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -88,7 +88,7 @@ export function ContractsTable() {
       const token = localStorage.getItem("token")
       if (!token) throw new Error("Tokeni nuk ekziston!")
 
-      await axios.delete(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/contracts/${id}`, {
+      await axios.delete(`https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/contracts/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -106,7 +106,7 @@ export function ContractsTable() {
       if (!token) throw new Error("Tokeni nuk ekziston!")
 
       await axios.put(
-        `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/contracts/${editedContract?.contractId}`,
+        `https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/contracts/${editedContract?.contractId}`,
         editedContract,
         { headers: { Authorization: `Bearer ${token}` } }
       )

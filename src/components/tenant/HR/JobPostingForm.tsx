@@ -88,14 +88,14 @@ export function JobPostingForm() {
 
     const fetchTenantIdAndIndustries = async () => {
       try {
-        const tenantRes = await fetch(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/tenant/filter?schemaName=${schemaName}`, {
+        const tenantRes = await fetch(`https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/tenant/filter?schemaName=${schemaName}`, {
           headers: { Authorization: `Bearer ${token}` }
         })
         const tenantData = await tenantRes.json()
         if (tenantData.length === 0) throw new Error("Tenant not found by schema")
         setTenantId(tenantData[0].tenantId)
 
-        const industryRes = await fetch(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/industry`, {
+        const industryRes = await fetch(`https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/industry`, {
           headers: { Authorization: `Bearer ${token}` }
         })
         const industryData = await industryRes.json()
@@ -130,7 +130,7 @@ export function JobPostingForm() {
       if (!token) throw new Error("User is not authenticated")
       if (!tenantId) throw new Error("Tenant ID not loaded")
 
-      const jobRes = await fetch("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/job-listing", {
+      const jobRes = await fetch("https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/job-listing", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -161,7 +161,7 @@ export function JobPostingForm() {
       const jobId = createdJob.jobListingId
 
       for (const tag of values.tags || []) {
-        await fetch("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/job-tag", {
+        await fetch("https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/job-tag", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

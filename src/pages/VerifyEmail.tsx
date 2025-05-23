@@ -46,7 +46,7 @@ const VerifyEmailPage = () => {
   const handleVerify = async () => {
     try {
       const response = await axios.post(
-        `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-general/verify`,
+        `https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-general/verify`,
         { email, code },
         {
           headers: {
@@ -65,7 +65,7 @@ const VerifyEmailPage = () => {
   const handleResend = async () => {
     try {
       await axios.post(
-        `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-general/resend`,
+        `https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-general/resend`,
         { email },
         {
           headers: {

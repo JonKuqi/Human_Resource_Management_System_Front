@@ -90,7 +90,7 @@ export function LeaveRequestsTable() {
       }
   
       // Dërgo kërkesën me tokenin në header
-      const response = await axios.get("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/leave-request/", {
+      const response = await axios.get("https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/leave-request/", {
         headers: {
           Authorization: `Bearer ${token}`, // Dërgo tokenin në Authorization header
         },
@@ -162,7 +162,7 @@ export function LeaveRequestsTable() {
   
       // Përditëso statusin
       const res = await axios.put(
-        `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/leave-request/${id}`,
+        `https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/leave-request/${id}`,
         updatedLeaveRequest,
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -179,7 +179,7 @@ export function LeaveRequestsTable() {
         };
         
         await axios.post(
-          "http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/notification",
+          "https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/notification",
           notificationPayload,
           { headers: { Authorization: `Bearer ${token}` } }
         )

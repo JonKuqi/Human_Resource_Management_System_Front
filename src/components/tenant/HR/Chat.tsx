@@ -72,7 +72,7 @@ export function Chat() {
     if (!token) return
     try {
       const res = await axios.get(
-        `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/user-tenant/${tenantId}`,
+        `https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/user-tenant/${tenantId}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -107,7 +107,7 @@ export function Chat() {
     
     
 
-    const socket = new SockJS("http://humanresourcemanagementsystemback-production.up.railway.app/ws")
+    const socket = new SockJS("https://humanresourcemanagementsystemback-production.up.railway.app/ws")
 
     const client = new Client({
       webSocketFactory: () => socket,

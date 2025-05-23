@@ -63,7 +63,7 @@ export function PerformanceEvaluationList() {
         const decoded: DecodedToken = jwtDecode(token)
         setUserEmail(decoded.sub)
 
-        const res = await fetch("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/evaluation-forms", {
+        const res = await fetch("https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/evaluation-forms", {
           headers: { Authorization: `Bearer ${token}` },
         })
         if (!res.ok) throw new Error("Failed to fetch evaluations")
@@ -81,7 +81,7 @@ export function PerformanceEvaluationList() {
           ids.map(async (id) => {
             try {
               const res = await fetch(
-                `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/user-tenant/filter?userTenantId=${id}`,
+                `https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/user-tenant/filter?userTenantId=${id}`,
                 { headers: { Authorization: `Bearer ${token}` } }
               )
               const json: UserTenant[] = await res.json()
@@ -112,7 +112,7 @@ export function PerformanceEvaluationList() {
     if (!window.confirm("Are you sure you want to delete this evaluation?")) return
 
     try {
-      const res = await fetch(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/evaluation-forms/${id}`, {
+      const res = await fetch(`https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/evaluation-forms/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       })

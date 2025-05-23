@@ -26,7 +26,7 @@ const JobDetailPage: React.FC = () => {
       setLoading(true)
       try {
         const jobId = Number.parseInt(id || "0")
-        const response = await fetch(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/job-listing/${jobId}`)
+        const response = await fetch(`https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/job-listing/${jobId}`)
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -79,7 +79,7 @@ const handleApplicationSubmit = async (e: React.FormEvent) => {
   formData.append("cv", selectedFile)
 
   try {
-    const response = await fetch("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-application/apply", {
+    const response = await fetch("https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user-application/apply", {
       method: "POST",
       body: formData,
         headers: {

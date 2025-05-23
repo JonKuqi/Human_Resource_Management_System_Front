@@ -45,7 +45,7 @@ export function EmployeeSidebar() {
         if (!token) return
         
         // In a real app, you would fetch this data from your API
-        // const response = await axios.get("http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/user-info", {
+        // const response = await axios.get("https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/user-info", {
         //   headers: { Authorization: `Bearer ${token}` }
         // })
         // setUserInfo(response.data)

@@ -38,7 +38,7 @@ const LoginPage = () => {
 
  const handleSubmit = async (values: any, { setSubmitting }: any) => {
   try {
-    const response = await axios.post(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user/authenticate`, {
+    const response = await axios.post(`https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/user/authenticate`, {
       email: values.email,
       password: values.password,
     })
@@ -53,7 +53,7 @@ const LoginPage = () => {
 
     if (role === "TENANT_USER") {
       const userRolesResponse = await axios.get(
-        `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/user-role/filter?userTenant.id=${userTenantId}`,
+        `https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/user-role/filter?userTenant.id=${userTenantId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -65,7 +65,7 @@ const LoginPage = () => {
       if (!roleId) throw new Error("No role found for this user");
 
       const rolePermRes = await axios.get(
-          `http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/role-permission/filter?role.id=${roleId}`,
+          `https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/tenant/role-permission/filter?role.id=${roleId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -74,7 +74,7 @@ const LoginPage = () => {
        const rolePerms = rolePermRes.data;
       const permissionIds = rolePerms.map((rp: any) => rp.tenantPermission.tenantPermissionId);
       //  Get all available permissions
-      const allPermRes = await axios.get(`http://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/permission`, {
+      const allPermRes = await axios.get(`https://humanresourcemanagementsystemback-production.up.railway.app/api/v1/public/permission`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
