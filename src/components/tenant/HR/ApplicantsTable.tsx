@@ -24,6 +24,11 @@ interface Applicant {
   experience: string
   status: string
   timeOfApplication: string
+    cv?: {
+    documentId: number
+    fileName: string
+    contentType: string
+  }
 }
 
 const getStatusBadge = (status: string) => {
@@ -79,6 +84,47 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
       console.error("Error fetching applicants:", error)
     }
   }
+
+const handleStatusChange = async (applicationId: number, newStatus: string) => {
+  const token = localStorage.getItem("token") || ""
+  const applicantToUpdate = applicants.find(app => app.applicationId === applicationId)
+
+  if (!applicantToUpdate) return
+
+  const updatedApplicant = {
+    ...applicantToUpdate,
+    status: newStatus,
+  }
+
+  try {
+    const response = await fetch(`http://localhost:8081/api/v1/tenant/application/${applicationId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(updatedApplicant),
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to update status")
+    }
+
+    setApplicants((prev) =>
+      prev.map((app) =>
+        app.applicationId === applicationId ? { ...app, status: newStatus } : app
+      )
+    )
+    alert("Successfuly update applicant status.")
+    
+
+  } catch (error) {
+    console.error("Error updating status:", error)
+    alert("Failed to update applicant status.")
+  }
+}
+
+
 
   useEffect(() => {
     if (jobId) {
@@ -157,7 +203,25 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
                       <TableCell>{applicant.applicantEmail}</TableCell>
                       <TableCell>{applicant.experience}</TableCell>
                       <TableCell>{new Date(applicant.timeOfApplication).toLocaleDateString()}</TableCell>
-                      <TableCell>{getStatusBadge(applicant.status)}</TableCell>
+                      {/* <TableCell>{getStatusBadge(applicant.status)}</TableCell> */}
+                      <TableCell>
+                      <Select
+                        value={applicant.status}
+                        onValueChange={(newStatus) => handleStatusChange(applicant.applicationId, newStatus)}
+                      >
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue placeholder="Change status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="new">New</SelectItem>
+                          <SelectItem value="reviewing">Reviewing</SelectItem>
+                          <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                          <SelectItem value="interviewing">Interviewing</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -217,7 +281,50 @@ export function ApplicantsTable({ jobId }: { jobId: string }) {
                 <Label>Application Date</Label>
                 <div className="rounded-md border p-2">{new Date(selectedApplicant.timeOfApplication).toLocaleString()}</div>
               </div>
+              {selectedApplicant?.cv?.documentId && (
+                <Button
+                  onClick={async () => {
+                    const token = localStorage.getItem("token") || "";
+
+                    try {
+                      const documentId = selectedApplicant.cv?.documentId;
+                      if (!documentId) throw new Error("No CV available for this applicant");
+
+                      const res = await fetch(
+                        `http://localhost:8081/api/v1/tenant/document/${documentId}`,
+                        {
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                          },
+                        }
+                      );
+
+                      if (!res.ok) throw new Error("Failed to download CV");
+
+                      const blob = await res.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = selectedApplicant.cv?.fileName || "cv.pdf";
+                      document.body.appendChild(a);
+                      a.click();
+                      a.remove();
+                      window.URL.revokeObjectURL(url);
+                    } catch (err) {
+                      console.error("Download error:", err);
+                      alert("Failed to download CV.");
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  <Download className="w-4 h-4" />
+                  Download CV
+                </Button>
+              )}
+
+
             </div>
+            
           )}
         </DialogContent>
       </Dialog>

@@ -42,7 +42,7 @@ const Navbar2 = () => {
               }}
               className="px-3 py-2 rounded-md text-sm font-medium hover:text-white hover:bg-opacity-20"
             >
-             Job Listings
+              Job Listings
             </Link>
 
             <Link
@@ -54,6 +54,16 @@ const Navbar2 = () => {
               className="px-3 py-2 rounded-md text-sm font-medium hover:text-white hover:bg-opacity-20"
             >
               Manage Skills
+            </Link>
+            <Link
+              to="/user/applications"
+              style={{
+                backgroundColor: isActive("/user/applications") ? colors.accent : "transparent",
+                color: isActive("/user/applications") ? "white" : "#BDC3C7",
+              }}
+              className="px-3 py-2 rounded-md text-sm font-medium hover:text-white hover:bg-opacity-20"
+            >
+              My Applications
             </Link>
 
             <DropdownMenu>
@@ -109,7 +119,7 @@ const Navbar2 = () => {
             className="block px-3 py-2 rounded-md text-base font-medium"
             onClick={() => setIsMenuOpen(false)}
           >
-            Post Job Listings
+            See Job Listings
           </Link>
           <Link
             to="/user/skills"
