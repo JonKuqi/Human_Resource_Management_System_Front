@@ -118,6 +118,17 @@ export function EmployeeForm({ onSuccess }: { onSuccess?: () => void }) {
 
 async function onSubmit(values: z.infer<typeof formSchema>) {
   try {
+      const API = axios.create({
+    baseURL: "http://localhost:8081/api/v1",
+    withCredentials: true,
+  })
+
+  API.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token")
+    if (token) config.headers.Authorization = `Bearer ${token}`
+    return config
+  })
+  
     const addressRes = await API.post("/public/address", {
       country: values.country,
       city: values.city,
