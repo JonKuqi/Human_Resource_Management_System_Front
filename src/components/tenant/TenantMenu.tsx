@@ -80,20 +80,6 @@ const menuPages = [
     permission: "POST:/api/v1/tenant/user-tenant",
     icon: <Users className="h-5 w-5" />,
   },
-  // {
-  //   id: "hr-performance",
-  //   name: "HR Performance",
-  //   path: "/tenant/performance",
-  //   permission: "POST:/api/v1/tenant/evaluation-forms",
-  //   icon: <Star className="h-5 w-5" />,
-  // },
-  // {
-  //   id: "hr-leave-requests",
-  //   name: "HR Leave Requests",
-  //   path: "/tenant/leave-requests",
-  //   permission: "PUT:/api/v1/tenant/leave-request/",
-  //   icon: <Calendar className="h-5 w-5" />,
-  // },
   {
     id: "hr-contracts",
     name: "Contracts",
@@ -125,13 +111,6 @@ const menuPages = [
   path: "/tenant/employee/contract",
   permission: "GET:/api/v1/tenant/contract",
   icon: <FileText className="h-5 w-5" />,
-},
-{
-  id: "employee-evaluation",
-  name: "Evaluations",
-  path: "/tenant/employee/evaluation",
-  permission: "GET:/api/v1/tenant/evaluation-forms",
-  icon: <Star className="h-5 w-5" />,
 },
 {
   id: "employee-payroll",
