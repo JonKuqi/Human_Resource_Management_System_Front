@@ -197,7 +197,7 @@ const openPermissionsPanel = async (roleId: number) => {
 
   try {
     const res = await API.get<RolePermissionDTO[]>(
-      `/tenant/role-permission/filter?roleId=${roleId}`
+      `/tenant/role-permission/by-role/${roleId}`
     );
 
     const permissions = res.data ?? [];  // ← handle undefined/null safely
