@@ -223,9 +223,9 @@ export default function SkillsManagement() {
         (us) => us.userSkillsId !== selectedSkill.userSkillsId
       );
   
-      await axios.put(
-        `http://localhost:8081/api/v1/public/user-skills/${selectedSkill.userSkillsId}/value`,
-        {
+     await axios.put(
+  `http://localhost:8081/api/v1/public/user-skills/${selectedSkill.userSkillsId}`,
+ {
           skill: { skillId: skillForm.skillId },
           value: skillForm.value,
           userGeneral: { userGeneralId },
