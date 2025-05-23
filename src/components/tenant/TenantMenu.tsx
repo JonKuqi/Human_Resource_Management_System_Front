@@ -119,14 +119,13 @@ const menuPages = [
   permission: "GET:/api/v1/tenant/payroll",
   icon: <Wallet className="h-5 w-5" />,
 },
-{
-  id: "employee-notifications",
-  name: "Notifications",
-  path: "/tenant/employee/notifications",
-  permission: "GET:/api/v1/tenant/notifications",
-  icon: <Bell className="h-5 w-5" />,
-  hasBadge: true,
-},
+  // {
+  //   id: "company-news",
+  //   name: "Company News",
+  //   path: "/tenant/company-news",
+  //   permission: "GET:/api/v1/tenant/notification",
+  //   icon: <Bell className="h-5 w-5" />,
+  // }
 
 ];
 

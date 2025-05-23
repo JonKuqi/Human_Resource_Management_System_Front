@@ -54,7 +54,8 @@ import EmployeeContratsPage from "./pages/tenant/Employee/ContractPage";
 import EmployeeEvaluationPage from "./pages/tenant/Employee/EvalutationPage";
 import EmployeeLeaveRequestPage from "./pages/tenant/Employee/LeaveRequestPage";
 import EmployeePayrollPage from "./pages/tenant/Employee/PayrollPage";
-import EmployeeNotificationPage from "./pages/tenant/Employee/NotificationPage";
+import EmployeeNotificationPage from "./pages/tenant/CompanyNews";
+import CompanyNews from "./pages/tenant/CompanyNews";
 
 
 
@@ -121,6 +122,7 @@ function App() {
                       <Route path="performance" element={<PerformancePage />} />
                       <Route path="performance/new" element={<NewPerformanceEvaluationPage />} />
                       <Route path="chat" element={<ChatPage />} />
+                      <Route path="company-news" element ={<CompanyNews />}/>
 
                        {/* 🧑‍💼 EMPLOYEE ROUTES */}
                       <Route path="employee/contract" element={<EmployeeContratsPage />} />
