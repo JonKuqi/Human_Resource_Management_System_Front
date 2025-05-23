@@ -30,11 +30,13 @@ interface Message {
     userTenantId?: number  // shto këtë fushë, opsionale nëse nuk ka gjithmonë
   }
   
-  interface DecodedToken {
-    role: string;
-    user_tenant_id: number;
-  }
-  
+ interface DecodedToken {
+  tenant: string;
+  user_tenant_id: number;
+  role: string;
+}
+
+
   const avatarColors = ["bg-blue-600", "bg-green-600", "bg-red-600", "bg-yellow-600", "bg-purple-600"]
 
 function getColorForName(name: string) {
@@ -61,11 +63,12 @@ export function Chat() {
   const stompClient = useRef<Client | null>(null)
 
   const token = localStorage.getItem("token")
-  const payload = token ? parseJwt(token) : null
+const payload = token ? parseJwt(token) : null
 
- 
+const tenantSchema = payload?.tenant // kjo do të jetë "tenant_f3d0afafc21d"
+const userTenantId = payload?.user_tenant_id
 
-  const userTenantId = payload?.user_tenant_id
+
 
   
   const fetchUserName = async (tenantId: number | string) => {
@@ -94,7 +97,8 @@ export function Chat() {
   }
 
   // Merr emrin e userit bazuar ne userTenantId, nëse nuk e kemi e marrim
-  
+ 
+
   useEffect(() => {
     if (userTenantId) {
       fetchUserName(userTenantId)
@@ -116,18 +120,29 @@ export function Chat() {
       onConnect: () => {
         console.log("Connected to WebSocket")
 
-        client.subscribe("/topic/public", (message) => {
-          if (message.body) {
-            const chatMessage = JSON.parse(message.body)
-            chatMessage.timestamp = new Date()
-            setMessages(prev => [...prev, chatMessage])
-          }
-        })
+        client.subscribe(`/topic/tenant-${tenantSchema}`, (message) => {
+  if (message.body) {
+    const chatMessage = JSON.parse(message.body)
+    chatMessage.timestamp = new Date()
+    console.log("⏺️ Mesazh i pranuar nga backend:", chatMessage) 
+    setMessages(prev => [...prev, chatMessage])
+  }
+})
 
-        client.publish({
-          destination: "/app/chat.addUser",
-          body: JSON.stringify({ sender: fullName, type: MessageType.Join, content: '' })
-        })
+
+     client.publish({
+  destination: "/app/chat.addUser",
+  body: JSON.stringify({
+    sender: fullName,
+    type: MessageType.Join,
+    content: '',
+    tenant: tenantSchema,       // e njëjta fushë këtu
+    userTenantId: userTenantId
+  })
+})
+
+
+
       }
     })
 
@@ -146,17 +161,20 @@ export function Chat() {
   const handleSendMessage = () => {
     if (newMessage.trim() === "" || !stompClient.current || !stompClient.current.connected) return
 
-    const message = {
-      sender: fullName,
-      content: newMessage,
-      type: MessageType.Chat,
-      timestamp: new Date()
-    }
+   const message = {
+  sender: fullName,
+  content: newMessage,
+  type: MessageType.Chat,
+  timestamp: new Date(),
+  tenant: tenantSchema,       // ndrysho nga tenantId → tenant
+  userTenantId: userTenantId
+}
 
-    stompClient.current.publish({
-      destination: "/app/chat.sendMessage",
-      body: JSON.stringify(message)
-    })
+stompClient.current.publish({
+  destination: "/app/chat.sendMessage",
+  body: JSON.stringify(message)
+})
+
 
     setNewMessage("")
   }
