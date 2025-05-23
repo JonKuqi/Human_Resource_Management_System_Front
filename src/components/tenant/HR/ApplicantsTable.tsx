@@ -24,6 +24,11 @@ interface Applicant {
   experience: string
   status: string
   timeOfApplication: string
+    cv?: {
+    documentId: number
+    fileName: string
+    contentType: string
+  }
 }
 
 const getStatusBadge = (status: string) => {
@@ -110,6 +115,9 @@ const handleStatusChange = async (applicationId: number, newStatus: string) => {
         app.applicationId === applicationId ? { ...app, status: newStatus } : app
       )
     )
+    alert("Successfuly update applicant status.")
+    
+
   } catch (error) {
     console.error("Error updating status:", error)
     alert("Failed to update applicant status.")
@@ -273,7 +281,50 @@ const handleStatusChange = async (applicationId: number, newStatus: string) => {
                 <Label>Application Date</Label>
                 <div className="rounded-md border p-2">{new Date(selectedApplicant.timeOfApplication).toLocaleString()}</div>
               </div>
+              {selectedApplicant?.cv?.documentId && (
+                <Button
+                  onClick={async () => {
+                    const token = localStorage.getItem("token") || "";
+
+                    try {
+                      const documentId = selectedApplicant.cv?.documentId;
+                      if (!documentId) throw new Error("No CV available for this applicant");
+
+                      const res = await fetch(
+                        `http://localhost:8081/api/v1/tenant/document/${documentId}`,
+                        {
+                          headers: {
+                            Authorization: `Bearer ${token}`,
+                          },
+                        }
+                      );
+
+                      if (!res.ok) throw new Error("Failed to download CV");
+
+                      const blob = await res.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = selectedApplicant.cv?.fileName || "cv.pdf";
+                      document.body.appendChild(a);
+                      a.click();
+                      a.remove();
+                      window.URL.revokeObjectURL(url);
+                    } catch (err) {
+                      console.error("Download error:", err);
+                      alert("Failed to download CV.");
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  <Download className="w-4 h-4" />
+                  Download CV
+                </Button>
+              )}
+
+
             </div>
+            
           )}
         </DialogContent>
       </Dialog>
