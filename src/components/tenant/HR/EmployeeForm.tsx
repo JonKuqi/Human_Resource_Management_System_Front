@@ -116,10 +116,9 @@ export function EmployeeForm({ onSuccess }: { onSuccess?: () => void }) {
     fetchDepartments()
   }, [])
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-
-        const API = axios.create({
+async function onSubmit(values: z.infer<typeof formSchema>) {
+  try {
+      const API = axios.create({
     baseURL: "http://localhost:8081/api/v1",
     withCredentials: true,
   })
@@ -129,25 +128,69 @@ export function EmployeeForm({ onSuccess }: { onSuccess?: () => void }) {
     if (token) config.headers.Authorization = `Bearer ${token}`
     return config
   })
-      const response=await API.post("/tenant/user-tenant/employees", {
-        firstName: values.firstName,
-        lastName: values.lastName,
-        email: values.email,
-        phone: values.phone,
-        gender: values.gender,
-        departmentName: values.department,
-        positionTitle: values.position,
-        contractType: values.contractType,
-        salary: values.salary,
-        contractEndDate: values.contractEnd
-          ? values.contractEnd.toISOString().split("T")[0]
-          : null,
-        country: values.country,
-        city: values.city,
-        street: values.street,
-        zip: values.zip,
-      
-      })
+  
+    const addressRes = await API.post("/public/address", {
+      country: values.country,
+      city: values.city,
+      street: values.street,
+      zip: values.zip
+    });
+    const addressId = addressRes.data.addressId;
+
+    const userTenantRes = await API.post("/tenant/user-tenant", {
+      firstName: values.firstName,
+      lastName: values.lastName,
+      phone: values.phone,
+      gender: values.gender,
+      createdAt: new Date().toISOString(),
+      user: {
+        email: values.email
+      },
+      address: {
+        addressId
+      }
+    });
+    const userTenantId = userTenantRes.data.userTenantId;
+
+    // Check if department exists
+    const deptRes = await API.get(`/tenant/department/filter?name=${encodeURIComponent(values.department)}`);
+    let departmentId;
+    if (deptRes.data && deptRes.data.length > 0) {
+      departmentId = deptRes.data[0].departmentId;
+    } else {
+      const newDeptRes = await API.post("/tenant/department", {
+        name: values.department,
+        description: "Auto-created",
+        createdAt: new Date().toISOString()
+      });
+      departmentId = newDeptRes.data.departmentId;
+    }
+
+    // Check if position exists
+    const posRes = await API.get(`/tenant/position/filter?title=${encodeURIComponent(values.position)}`);
+    let positionId;
+    if (posRes.data && posRes.data.length > 0) {
+      positionId = posRes.data[0].positionId;
+    } else {
+      const newPosRes = await API.post("/tenant/position", {
+        title: values.position,
+        description: "Auto-created",
+        createdAt: new Date().toISOString(),
+        department: { departmentId }
+      });
+      positionId = newPosRes.data.positionId;
+    }
+
+    await API.post("/tenant/contracts", {
+      userTenant: { userTenantId },
+      position: { positionId },
+      contractType: values.contractType,
+      salary: parseFloat(values.salary),
+      terms: "Auto",
+      startDate: new Date().toISOString().split("T")[0],
+      endDate: values.contractEnd ? values.contractEnd.toISOString().split("T")[0] : null,
+      createdAt: new Date().toISOString()
+    });
       
       toast.success("Employee added successfully!")
       
