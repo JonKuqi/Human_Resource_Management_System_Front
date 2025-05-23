@@ -154,10 +154,30 @@ export function EmployeeForm({ onSuccess }: { onSuccess?: () => void }) {
 
       
       form.reset();
-    } catch (error) {
-      toast.error("Failed to save employee")
+  } catch (error: any) {
+    const message = error?.response?.data?.message ?? "Unknown error";
+
+    if (message.includes("Maximum user limit reached")) {
+      if (message.includes("FREE")) {
+        if (window.confirm("You've reached the limit for FREE plan. Would you like to upgrade to BASIC or PRO?")) {
+          window.location.href = "/tenant/subscription";
+        }
+      } else if (message.includes("BASIC")) {
+        if (window.confirm("You've reached the limit for BASIC plan. Would you like to upgrade to PRO?")) {
+          window.location.href = "/tenant/subscription";
+        }
+      } else if (message.includes("PRO")) {
+        toast.error("You've reached the maximum allowed users for the PRO plan. Contact support to extend your limit.");
+      } else {
+        toast.error(message);
+      }
+    } else {
+      toast.error("Failed to save employee.");
+      toast.error("You should choose the payment plan first!")
     }
   }
+}
+
 
   return (
     <Card className="border-hr-light-gray">
